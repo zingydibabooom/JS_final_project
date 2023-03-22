@@ -1,26 +1,52 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <!-- <link rel="stylesheet" href="/app.csss" /> -->
+
+<head>
+    <link rel="stylesheet" href="/stylesheet.css" />
 
     <title>Registration</title>
 </head>
+
 <body>
-        <form action="/addUserCredentials" method="post">
-            <h1> Sign up</h1>
-      <label for ="username" value="username"> Username:</label> 
-      <input type = "text" name="username" id="username" placeholder="Dumbledore11">
-      <br>
-      <br>
-      <label for ="password" value="password">Password:</label>
-      <input type ="text" name="password" id ="password" placeholder ="12345">
-      <br>
-      <br>
-      <label for ="email"  value="email"> email:</label> 
-      <input type ="text" name="email" id ="email" placeholder="dumbledore@hogwarts.ie">
-      <br>
-      <br>
-      <input type="submit" value="Submit"> 
+    <form action="/addUserCredentials" method="post">
+        <h1> Sign up</h1>
+        <div class="flex-row">
+            <div class="col-md-auto mt-5" >
+                <label for="username" value="username"> Username:</label>
+                <input type="text" class="form-control" name="username" id="username" placeholder="Dumbledore11">
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="form-group">
+            <div class="col-md-6">
+                <label for="password" value="password">Password:</label>
+                <input type="text" class="form-control" name="password" id="password" placeholder="12345">
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="form-group">
+            <div class="col-md-6">
+                <label for="email" value="email"> email:</label>
+                <input type="text" class="form-control" name="email" id="email" placeholder="dumbledore@hogwarts.ie">
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="form-group">
+            <div class="form-check">
+                <input class="form-check-input is-invalid" type="checkbox" value="" id="invalidCheck3" required>
+                <label class="form-check-label" for="invalidCheck3">
+                    Agree to terms and conditions
+                </label>
+                <div class="invalid-feedback">
+                    You must agree before submitting.
+                </div>
+            </div>
+        </div>
+        <input type="submit" value="Submit">
     </form>
 </body>
+
 </html>
