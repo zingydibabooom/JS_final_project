@@ -1,4 +1,4 @@
-var mysql = require("mysql");
+var mysql = require("mysql2");
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -13,11 +13,16 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "./views"));
 app.use(express.static(path.join(__dirname, "./assets")));
 
+app.get("/log_in", (req, res) => {
+    return res.render("log_in");
+})
+
 app.get("/registration", (req, res) => {
     return res.render("registration");
 })
 
 
+//For registration
 const { check, validationResult } = require("express-validator");
 //define the validation rules
 let validationRule = [
@@ -26,6 +31,7 @@ let validationRule = [
     // check(password).mixedCase().numbers().letters().min(8),
     check("email").trim().isEmail().escape(),
 ];
+
 app.post("/addUserCredentials", urlencodedParser, validationRule, async (req, res) => {
 
     let username = req.body.username;
@@ -39,27 +45,27 @@ app.post("/addUserCredentials", urlencodedParser, validationRule, async (req, re
     dotenv.config();
     const DBCONFIG = {
         host: process.env.DB_HOST,
-        database: process.env.DB_NAME,
+        database: process.env.DB_DATABASE,
         user: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD
     };
-
-    const connection = mysql.createConnection(DBCONFIG);
+   //build the connection to mysql
+    let connection = mysql.createConnection(DBCONFIG);
     connection.connect(function (err) {
-        const query = `INSERT INTO user_credential(\
-        username, password, email\
-    ) VALUES (\
-        ${username}, ${password}, ${email}\
-    );`
-        console.log(username);
-
-        connection.query(query, function (err, result, fields) {
-            console.log(result);
-
-        });
-        connection.end();
+        if (err) throw err;
+        else console.log("successful connection")
     });
-
+    //if there is no error, open query:
+    const query = `INSERT INTO user_credential(\
+        user_name, user_password, user_email\
+    ) VALUES (\
+        '${username}', '${password}', '${email}'\
+    );`
+    connection.query(query, function (err, result, fields) {
+        if (err) throw err;
+        console.log(result);
+    });
+    connection.end();
     //connection builder
     // const QueryBuilder = require('node-querybuilder');
     // const pool = new QueryBuilder(DBCONFIG, 'mysql', 'pool');
@@ -72,7 +78,6 @@ app.post("/addUserCredentials", urlencodedParser, validationRule, async (req, re
     //     }
     //     );
     // });
-
     //Error messages
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -89,6 +94,18 @@ app.post("/addUserCredentials", urlencodedParser, validationRule, async (req, re
     }
 
 });
+
+    // //Create sessions
+    // app.use(session({
+    //     secret: "session_secret",
+    //     resave: false,
+    //     saveUninitialized: true,
+    //     cookie: { secure: false }
+    // }))
+//TODO
+
+
+
 
 
 app.listen(PORT, () => {
@@ -113,4 +130,93 @@ app.listen(PORT, () => {
 //     console.log(userName, passWord, email);
 
 
+//----------------------------------------image upload-------------------------------//
+const session = require("express-session");
+const flash = require("express-flash");
+const fileUpload = require("express-fileupload");
+//sharp - resizes the images 
+const sharp = require("sharp");
+// need to npm install almost any require things apart from fs
+//fs/promises--> can use await and dont need to use callback by ourselves
+const fs = require("fs/promises");
 
+app.use(
+    session({
+      secret: "session_secret",
+      resave: false,
+      saveUninitialized: false,
+    })
+  );
+  app.use(flash());
+  app.use(
+    fileUpload({
+      limits: {
+        fileSize: 2000000, // Around 2MB
+      },
+      abortOnLimit: true,
+    //   limitHandler: fileTooBig,
+    })
+  );
+
+
+  app.get("/", (req, res) => {
+    res.render("index.ejs", { messages: { error: null } });
+  });
+  
+  const acceptedTypes = ["image/gif", "image/jpeg", "image/png"];
+  
+  app.post("/upload", async (req, res) => {
+    const image = req.files.pic;
+
+    if (acceptedTypes.indexOf(image.mimetype) >= 0) {
+      //where is it going to save the file to
+      const imageUploaded = __dirname + "/assets/uploads/" + image.name;
+      //const localFileData = `{_direname}/assets/uploads/${imageFile.name}`;
+
+      //copy the file and do the editting
+      // const resizedImagePath =
+      //   __dirname + "/assets/uploads/resized/" + image.name;
+      const editedFile= __dirname + "/assets/uploads/resized/" + image.name;
+    //   const editedUrl = _dirname+ "uploads/resized/" + image.name;
+         console.log(image);
+  
+      //resize the picture
+      await image.mv(imageUploaded).then(async () => {
+        try {
+          //this process will take a long time, wait for it to finish
+          await sharp(imageUploaded)
+            .resize(750)
+            .toFile(editedFile)
+            .then(() => {
+              //delete the original file
+              //or get rid of  and add: await fs.unlink
+              fs.unlink(imageUploaded, function (err) {
+                if (err) throw err;
+                console.log(imageUploaded + " deleted");
+
+                });
+              });
+              // with fs/promises: await fs.unlink(imageDestinationPath); it deletes the original file 
+              //res.send("done") --> work like console.log but on the page
+            }catch (error) {
+                console.log(error);
+              }
+              res.render("upload_image.ejs",{
+                image:"/uploads/resized/" + image.name,
+                image_name:image.name,
+            });
+        });
+    } else{
+        res.render("index.ejs", {
+            messages: { error: "I don't believe that's an image" },
+        });
+    }
+});
+
+  function fileTooBig(req, res, next) {
+    res.render("index.ejs", {
+      name: "",
+      messages: { error: "Filesize too large" },
+    });
+  }
+  

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="/stylesheet.css" />
+
+    <title>Log in</title>
+</head>
+
+<body>
+    <form action="/addUserCredentials" method="post">
+        <h1> Log in </h1>
+        <div class="flex-row">
+            <div class="col-md-auto mt-5" >
+                <label for="login_username" value="login_username"> Username:</label>
+                <input type="text" class="form-control" name="login_username" id="login_username" placeholder="Dumbledore11">
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="form-group">
+            <div class="col-md-6">
+                <label for="password" value="password">Password:</label>
+                <input type="text" class="form-control" name="password" id="password" placeholder="12345">
+            </div>
+        </div>
+        
+            <p>
+                Don't have an account? 
+               <a href="registration"> Sign up right now!</a>
+            </p>                
+            </div>
+        </div>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+
+</html>
