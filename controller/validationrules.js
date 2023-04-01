@@ -9,4 +9,4 @@ let validationRule = [
     check("email").trim().isEmail().escape(),
 ];
 
-module.exports = { validationRule};
+module.exports = { validationRule };

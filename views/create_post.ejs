@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="/stylesheet.css" />
+
+    <title>Log in</title>
+</head>
+
+<body>
+    <form action="/post_create" method="post">
+        <h1> Log in </h1>
+        <div class="flex-row">
+            <div class="col-md-auto mt-5" >
+                <label for="post_title" value="post_title"> Post Title (no more than 50 characters) </label>
+                <input type="text" class="form-control" name="login_username" id="login_username">
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="form-group">
+            <div class="col-md-6">
+                <label for="caption" value="caption">Post Caption (no more than 200 characters)</label>
+                <input type="text" class="form-control" name="password" id="password">
+            </div>
+        </div>              
+            </div>
+        </div>
+        <button class="submit_post"> Post </button>
+    </form>
+</body>
+
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image upload</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <script
+      type="text/javascript"
+      src="https://code.jquery.com/jquery-1.11.3.js"
+    ></script>
+    <script>
+      $(document).ready(function () {
+        $(document).on("focus", "#pic", () => {
+          $(".error").remove();
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="wrapper">
+      <h1>Upload an image</h1>
+      <form action="/"
+      <p>
+        Accepted file types are .jpg, .png, .gif, not exceeding 2MB in file size
+        <% if(messages.error){%>
+        <span class="error"><%= messages.error %></span>
+        <%}%>
+      </p>
+      <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="pic" id="pic" />
+        <button type="submit">Upload</button>
+      </form>
+    </div>
+  </body>
+</html> -->
