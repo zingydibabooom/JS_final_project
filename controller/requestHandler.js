@@ -4,7 +4,7 @@ const express = require("express");
 const router = express.Router();
 const bodyParser = require("body-parser");
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
-const { validation } = require("./validationrules");
+const { validationRule } = require("./validationrules");
 
 
 
@@ -87,15 +87,16 @@ const sharp = require("sharp");
 //fs/promises--> can use await and dont need to use callback by ourselves
 const fs = require("fs/promises");
 
-app.use(
+router.use(
     session({
       secret: "session_secret",
       resave: false,
       saveUninitialized: false,
     })
   );
-  app.use(flash());
-  app.use(
+  
+router.use(flash());
+router.use(
     fileUpload({
       limits: {
         fileSize: 2000000, // Around 2MB
@@ -167,4 +168,4 @@ router.post("/upload", async (req, res) => {
     });
   }
   
-  module.exports = { handleRequests };
+  module.exports = { router };
