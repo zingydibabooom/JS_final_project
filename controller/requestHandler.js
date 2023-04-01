@@ -11,6 +11,7 @@ const { DBCONFIG } = require("../app");
 
 //------------------------------------------------------TO DO: log in --------------------------------------//
 router.get("/log_in", (req, res) => {
+
     return res.render("log_in");
 });
 
@@ -68,10 +69,11 @@ router.post("/addUserCredentials", urlencodedParser, validationRule, (req, res) 
 // }))
 
 //---------------------------------------------------------TO DO start post ----------------------------------------//
-router.get("/create_post", (req, res) => {
+router.get("/post_create", (req, res) => {
     return res.render("create_post.ejs");
     // insert into post table; get postID;
     // pass the postID to /upload post method
+    
 });
 
 router.post("/upload", urlencodedParser, validationRule, (req, res) => {
@@ -231,7 +233,8 @@ router.post("/upload", async (req, res) => {
 });
 
 function fileTooBig(req, res, next) {
-    res.render("index.ejs", {
+    //or res.send?
+    res.render("create_post.ejs", {
         name: "",
         messages: { error: "Filesize too large" },
     });

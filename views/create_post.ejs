@@ -1,60 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>post create</title>
-    <link rel="stylesheet" href="/css/style.css" />
-    <script
-      type="text/javascript"
-      src="https://code.jquery.com/jquery-1.11.3.js"
-    ></script>
-    <script>
-      $(document).ready(function () {
-        $(document).on("focus", "#pic", () => {
-          $(".error").remove();
-        });
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>post create</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.js"></script>
+  <script>
+    $(document).ready(function () {
+      $(document).on("focus", "#pic", () => {
+        $(".error").remove();
       });
-    </script>
-  </head>
+    });
+  </script>
+</head>
 
 <body>
   <div class="wrapper">
     <form action="/post_create" method="get">
       <p>
         Accepted file types are .jpg, .png, .gif, not exceeding 2MB in file size
-        <% if(messages.error){%>
-        <span class="error"><%= messages.error %></span>
-        <%}%>
+        <!-- <% if(messages.error){%>
+          <span class="error">
+            <%= messages.error %>
+          </span>
+          <%}%> -->
       </p>
-      <form action="/upload" method="post" enctype="multipart/form-data">
+      <!-- <form action="/upload" method="post" enctype="multipart/form-data">
         <input type="file" name="pic" id="pic" />
         <button type="submit">Upload</button>
       </form>
 
-        <div class="flex-row">
-            <div class="col-md-auto mt-5" >
-                <label for="post_title" value="post_title"> Post Title (no more than 50 characters) </label>
-                <input type="text" class="form-control" name="login_username" id="login_username">
-            </div>
+      <div class="flex-row">
+        <div class="col-md-auto mt-5">
+          <label for="post_title" value="post_title"> Post Title (no more than 50 characters) </label>
+          <input type="text" class="form-control" name="login_username" id="login_username">
         </div>
-        <br>
-        <br>
-        <div class="form-group">
-            <div class="col-md-6">
-                <label for="caption" value="caption">Post Caption (no more than 200 characters)</label>
-                <input type="text" class="form-control" name="password" id="password">
-            </div>
-        </div>              
-            </div>
+      </div>
+      <br>
+      <br>
+      <div class="form-group">
+        <div class="col-md-6">
+          <label for="caption" value="caption">Post Caption (no more than 200 characters)</label>
+          <input type="text" class="form-control" name="password" id="password">
         </div>
-        <button class="submit_post" action="/show_post" method="post"> Post </button>
-    </form>
+      </div>
+  </div>
+  </div>
+  <button class="submit_post" action="/show_post" method="post"> Post </button> -->
+  </form>
   </div>
 </body>
 
 </html>
-
-
-
