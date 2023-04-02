@@ -18,7 +18,16 @@ const DBCONFIG = {
     password: process.env.DB_PASSWORD
 };
 
+//Create sessions always before app.use(router) for it to know there is session to use
+app.use(session({
+    secret: "session_secret",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+}));
 
+// export DBCONFIG before it goes to requestHandler/router
+module.exports = { DBCONFIG };
 app.use(router);
 
 app.listen(PORT, () => {
@@ -26,4 +35,3 @@ app.listen(PORT, () => {
 });
 
 
-module.exports = { DBCONFIG };
