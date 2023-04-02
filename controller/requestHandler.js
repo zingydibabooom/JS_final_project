@@ -8,9 +8,15 @@ const { validationRule } = require("./validationrules");
 const { DBCONFIG } = require("../app");
 
 
+//-------------------------------------------- homepage --------------------------------------------//
+
+router.get("/", (req, res)=>{
+   return res.render("index");
+})
+
 
 //------------------------------------------------------TO DO: log in --------------------------------------//
-router.get("/log_in", (req, res) => {
+router.get("/authentic_logIn", (req, res) => {
 
     return res.render("log_in");
 });
@@ -69,62 +75,34 @@ router.post("/addUserCredentials", urlencodedParser, validationRule, (req, res) 
 // }))
 
 //---------------------------------------------------------TO DO start post ----------------------------------------//
-router.get("/post_create", (req, res) => {
-    return res.render("create_post.ejs");
-    // insert into post table; get postID;
-    // pass the postID to /upload post method
-    
-});
+// router.get("/create_post", (req, res) => {
+//     return res.render("create_post.ejs");
+//     insert into post table; get postID;
+//     pass the postID to /upload post method
+// });
 
-router.post("/upload", urlencodedParser, validationRule, (req, res) => {
+// router.post("/upload", urlencodedParser, validationRule, (req, res) => {
 
-    let username = req.body.username;
-    let password = req.body.password;
-    let email = req.body.email;
-    //if there is no error, open query:
-    const query = `INSERT INTO user_credential(\
-        user_name, user_password, user_email\
-    ) VALUES (\
-        '${username}', '${password}', '${email}'\
-    );`
-    let connection = mysql.createConnection(DBCONFIG);
-    connection.connect(function (err) {
-        if (err) throw err;
-        else console.log("successful connection")
-    });
-    connection.query(query, function (err, result, fields) {
-        if (err) throw err;
-        console.log(result);
-    });
-    connection.end();
-});
-
-
-//--------------------------------------------------------  TO DO: create post ---------------------------------------//
-
-
-router.post("/post_complete", urlencodedParser, (req, res) => {
-    let post_title = req.body.post_title;
-    let caption = req.body.caption;
-
-    const query = `INSERT INTO post(\
-        post_title, post_text, date, user_id\
-    ) VALUES (\
-        '${post_title}', '${post_text}', '${user_id}'\
-    );`
-    let connection = mysql.createConnection(DBCONFIG);
-    connection.connect(function (err) {
-        if (err) throw err;
-        else console.log("successful connection")
-    });
-    connection.query(query, function (err, result, fields) {
-        if (err) throw err;
-        console.log(result);
-    });
-
-    connection.end();
-});
-
+//     let username = req.body.username;
+//     let password = req.body.password;
+//     let email = req.body.email;
+//     //if there is no error, open query:
+//     const query = `INSERT INTO user_credential(\
+//         user_name, user_password, user_email\
+//     ) VALUES (\
+//         '${username}', '${password}', '${email}'\
+//     );`
+//     let connection = mysql.createConnection(DBCONFIG);
+//     connection.connect(function (err) {
+//         if (err) throw err;
+//         else console.log("successful connection")
+//     });
+//     connection.query(query, function (err, result, fields) {
+//         if (err) throw err;
+//         console.log(result);
+//     });
+//     connection.end();
+// });
 
 //--------------------------------------------------------image upload-----------------------------------------//
 const session = require("express-session");
@@ -156,8 +134,8 @@ router.use(
 );
 
 // TO DO: change the path to image page
-router.get("/", (req, res) => {
-    res.render("index.ejs", { messages: { error: null } });
+router.get("/create_post", (req, res) => {
+    res.render("create_post", { messages: { error: null } });
 });
 
 const acceptedTypes = ["image/gif", "image/jpeg", "image/png"];
@@ -167,13 +145,13 @@ router.post("/upload", async (req, res) => {
 
     if (acceptedTypes.indexOf(image.mimetype) >= 0) {
         //where is it going to save the file to
-        const imageUploaded = __dirname + "/assets/uploads/" + image.name;
+        const imageUploaded = __dirname + "/../assets/uploads/" + image.name;
         //const localFileData = `{_direname}/assets/uploads/${imageFile.name}`;
 
         //copy the file and do the editting
         // const resizedImagePath =
         //   __dirname + "/assets/uploads/resized/" + image.name;
-        const editedFile = __dirname + "/assets/uploads/resized/" + image.name;
+        const editedFile = __dirname + "/../assets/uploads/resized/" + image.name;
         //   const editedUrl = _dirname+ "uploads/resized/" + image.name;
         console.log(image);
 
@@ -199,13 +177,13 @@ router.post("/upload", async (req, res) => {
                 console.log(error);
             }
             //todo: try res.redirect
-            res.render("show_post.ejs", {
-                image: "/uploads/resized/" + image.name,
+            res.render("create_post", {
+                image: "uploads/resized/" + image.name,
                 image_name: image.name,
             });
         });
     } else {
-        res.render("index.ejs", {
+        res.render("create_post", {
             messages: { error: "I don't believe that's an image" },
         });
     }
@@ -225,20 +203,47 @@ router.post("/upload", async (req, res) => {
         if (err) throw err;
         console.log(result);
     });
+    function fileTooBig(req, res, next) {
+        //or res.send?
+        res.render("create_post", {
+            name: "",
+            messages: { error: "Filesize too large" },
+        });
+    }
+    
     connection.end();
-
-
-
 
 });
 
-function fileTooBig(req, res, next) {
-    //or res.send?
-    res.render("create_post.ejs", {
-        name: "",
-        messages: { error: "Filesize too large" },
+
+
+
+//--------------------------------------------------------  TO DO: create post ---------------------------------------//
+
+
+router.post("/post_complete", urlencodedParser, (req, res) => {
+    let post_title = req.body.post_title;
+    let caption = req.body.caption;
+
+    const query = `INSERT INTO post(\
+        post_title, post_text, date, user_id\
+    ) VALUES (\
+        '${post_title}', '${caption}', '${user_id}'\
+    );`
+    let connection = mysql.createConnection(DBCONFIG);
+    connection.connect(function (err) {
+        if (err) throw err;
+        else console.log("successful connection")
     });
-}
+    connection.query(query, function (err, result, fields) {
+        if (err) throw err;
+        console.log(result);
+    });
+
+    connection.end();
+});
+
+
 
 
 
