@@ -5,7 +5,7 @@ const router = express.Router();
 const bodyParser = require("body-parser");
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
 const { validationRule } = require("./validationrules");
-const { DBCONFIG } = require("../app");
+const { DBCONFIG } = require("../app"); // app.use(”router“) comes after app.js -> modules.export
 
 
 //-------------------------------------------- homepage --------------------------------------------//
@@ -17,14 +17,56 @@ router.get("/", (req, res)=>{
 
 //------------------------------------------------------TO DO: log in --------------------------------------//
 router.get("/authentic_logIn", (req, res) => {
-
     return res.render("log_in");
 });
 
+//check if the user's session has expired
+function userLoggedIn(req){// return true when user is logged in; false otherwise
+     // if a session was once created but expired: return false
+     // req.session.user: assigned in the "/log_in" handler method, when user logs in successfully
+    return req.session.user !=null;
+};
 
+router.get("/", (req, res)=>{ 
+    if(userLoggedIn(req)==true){ // code run if user is logged in - session is active
+        var user_name = req.session.user;
+        res.render("log_in",{ 
+            data:{
+                user_name,
+            }
+        })
+    }else{ // if not logged in
+        res.render("log_in", {messages:{error:null} });
+    }
+});
 
-//post("/authentic_logIn
-
+router.post("/authentic_logIn", async(req, res) =>{
+    //regenerate the session
+    req.session.regenerate(function(err){
+        if(err) console.log(err);
+        //authentication - check user credentials against database
+    let connection = mysql.createConnection(DBCONFIG);
+    connection.connect(function (err) {
+        if (err) throw err;
+        else console.log("successful connection")
+    });
+        const  targetUserName = req.body.login_username;
+        const query = `SELECT user_password FROM user_credential WHERE user_name = '${targetUserName}';`;
+        connection.query(query, function (err, result, fields) {
+            if (err) throw err;
+            else if (result == req.body.password){
+            // store user information in session, typically a user id
+               req.session.user = req.body.login_username;
+            // save the session before redirection to ensure page
+            // load does not happen before session is saved
+                req.session.save(function(err){
+                    if(err)return next(err);
+                    res.redirect("/user_homepage");
+                })
+            }   
+     })
+    })
+});
 //-----------------------------------------------------for Log in & Register ----------------------------------//
 
 
@@ -66,13 +108,6 @@ router.post("/addUserCredentials", urlencodedParser, validationRule, (req, res) 
 
 });
 
-// //Create sessions
-// app.use(session({
-//     secret: "session_secret",
-//     resave: false,
-//     saveUninitialized: true,
-//     cookie: { secure: false }
-// }))
 
 //---------------------------------------------------------TO DO start post ----------------------------------------//
 // router.get("/create_post", (req, res) => {
@@ -177,7 +212,7 @@ router.post("/upload", async (req, res) => {
                 console.log(error);
             }
             //todo: try res.redirect
-            res.render("create_post", {
+            res.redirect("/upload", {
                 image: "uploads/resized/" + image.name,
                 image_name: image.name,
             });
@@ -197,7 +232,7 @@ router.post("/upload", async (req, res) => {
     //if there is no error, open query, insert to table
     const query = `INSERT INTO image (image_name, post_id)\
     VALUES (\
-        '${image_name}', '${post_id}'\
+        '${image.name}', '${post_id}'\
     );`
     connection.query(query, function (err, result, fields) {
         if (err) throw err;
