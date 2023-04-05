@@ -4,14 +4,50 @@ const express = require("express");
 const router = express.Router();
 const bodyParser = require("body-parser");
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
-const { validationRule } = require("./validationrules");
-const { DBCONFIG } = require("../app"); // app.use(”router“) comes after app.js -> modules.export
+const { validationRule, validationResult } = require("./validationrules");
+
+const dotenv = require("dotenv");
+dotenv.config();
+const DB_CONFIG = {
+    host: process.env.DB_HOST,
+    database: process.env.DB_DATABASE,
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD
+};
+//Newly added  should i have it in app.js?
+let connection = mysql.createConnection(DB_CONFIG);
+const session = require("express-session");
+const MySQLStore = require("express-mysql-session")(session);
+const sessionStore = new MySQLStore(DB_CONFIG); 
+
+
+router.use(session({
+	key: 'session_cookie_name',
+	secret: 'session_cookie_secret',
+	store: sessionStore,
+	resave: false,
+	saveUninitialized: false
+}));
+
+// Optionally use onReady() to get a promise that resolves when store is ready.
+sessionStore.onReady().then(() => {
+	// MySQL session store ready for use.
+	console.log('MySQLStore ready');
+}).catch(error => {
+	// Something went wrong.
+	console.error(error);
+});
+
+
+//todo-1 lets router use this for all paths - parse / understand user http requests.
+//todo: can remove erlencodedParser from individual paths now
+router.use(urlencodedParser);
 
 
 //-------------------------------------------- homepage --------------------------------------------//
 
-router.get("/", (req, res)=>{
-   return res.render("index");
+router.get("/", (req, res) => {
+    return res.render("index");
 })
 
 
@@ -21,52 +57,48 @@ router.get("/authentic_logIn", (req, res) => {
 });
 
 //check if the user's session has expired
-function userLoggedIn(req){// return true when user is logged in; false otherwise
-     // if a session was once created but expired: return false
-     // req.session.user: assigned in the "/log_in" handler method, when user logs in successfully
-    return req.session.user !=null;
+function userLoggedIn(req) {// return true when user is logged in; false otherwise
+    // if a session was once created but expired: return false
+    // req.session.user: assigned in the "/log_in" handler method, when user logs in successfully
+    return req.session.user_id != null;
 };
 
-router.get("/", (req, res)=>{ 
-    if(userLoggedIn(req)==true){ // code run if user is logged in - session is active
-        var user_name = req.session.user;
-        res.render("log_in",{ 
-            data:{
-                user_name,
-            }
-        })
-    }else{ // if not logged in
-        res.render("log_in", {messages:{error:null} });
-    }
-});
-
-router.post("/authentic_logIn", async(req, res) =>{
+router.post("/authentic_logIn", async (req, res) => {
     //regenerate the session
-    req.session.regenerate(function(err){
-        if(err) console.log(err);
+    req.session.regenerate(function (err) {
+        if (err) console.log(err);
         //authentication - check user credentials against database
-    let connection = mysql.createConnection(DBCONFIG);
-    connection.connect(function (err) {
-        if (err) throw err;
-        else console.log("successful connection")
-    });
-        const  targetUserName = req.body.login_username;
-        const query = `SELECT user_password FROM user_credential WHERE user_name = '${targetUserName}';`;
+        
+        connection.connect(function (err) {
+            if (err) throw err;
+            else console.log("successful connection")
+        });
+        const targetUserName = req.body.login_username;
+        const targetPassword = req.body.password;
+        const query = `SELECT user_id, user_name FROM user_credential WHERE\
+         user_name = '${targetUserName}' AND user_password = '${targetPassword}' ;`;
         connection.query(query, function (err, result, fields) {
             if (err) throw err;
-            else if (result == req.body.password){
-            // store user information in session, typically a user id
-               req.session.user = req.body.login_username;
-            // save the session before redirection to ensure page
-            // load does not happen before session is saved
+            else if (result.length === 0){ // not logged in
+               
+                //TODO: prompt wrong username or password
+
+            } else{ //logged in
+                // unpack sql result and get uder id(primary key), then assign to session.user_id
+                // then use that to insnert into post table
+                req.session.user_id = result[0].user_id;
+                req.session.user_name = result[0].user_name;
                 req.session.save(function(err){
-                    if(err)return next(err);
+                    if(err) return next (err);
                     res.redirect("/user_homepage");
                 })
-            }   
-     })
+            }
+        })
     })
 });
+
+
+
 //-----------------------------------------------------for Log in & Register ----------------------------------//
 
 
@@ -74,7 +106,7 @@ router.get("/registration", (req, res) => {
     return res.render("registration");
 })
 
-router.post("/addUserCredentials", urlencodedParser, validationRule, (req, res) => {
+router.post("/addUserCredentials", validationRule, (req, res) => {
 
     let username = req.body.username;
     let password = req.body.password;
@@ -85,12 +117,15 @@ router.post("/addUserCredentials", urlencodedParser, validationRule, (req, res) 
     ) VALUES (\
         '${username}', '${password}', '${email}'\
     );`
+    let connection = mysql.createConnection(DB_CONFIG);
     connection.query(query, function (err, result, fields) {
-        if (err) throw err;
+        if (err) throw err; //if throw err here the website will stop running 
         console.log(result);
         connection.end();
     });
-    
+// conection.connect((err)=>{
+//     console.log ("connected?", err);
+// });
 
     //Error messages
     const errors = validationResult(req);
@@ -110,11 +145,6 @@ router.post("/addUserCredentials", urlencodedParser, validationRule, (req, res) 
 
 
 //---------------------------------------------------------TO DO start post ----------------------------------------//
-// router.get("/create_post", (req, res) => {
-//     return res.render("create_post.ejs");
-//     insert into post table; get postID;
-//     pass the postID to /upload post method
-// });
 
 // router.post("/upload", urlencodedParser, validationRule, (req, res) => {
 
@@ -127,7 +157,7 @@ router.post("/addUserCredentials", urlencodedParser, validationRule, (req, res) 
 //     ) VALUES (\
 //         '${username}', '${password}', '${email}'\
 //     );`
-//     let connection = mysql.createConnection(DBCONFIG);
+//     let connection = mysql.createConnection(DB_CONFIG);
 //     connection.connect(function (err) {
 //         if (err) throw err;
 //         else console.log("successful connection")
@@ -139,8 +169,23 @@ router.post("/addUserCredentials", urlencodedParser, validationRule, (req, res) 
 //     connection.end();
 // });
 
-//--------------------------------------------------------image upload-----------------------------------------//
-const session = require("express-session");
+//--------------------------------------------------------post your work-----------------------------------------//
+
+router.get("/user_homepage", (req, res) => {
+    if (userLoggedIn(req) == true) { // code run if user is logged in - session is active
+        var user_name = req.session.user_name;
+        res.render("user_homepage", {
+            data: {
+                user_name,
+            }
+        })
+    } else { // if not logged in
+        res.render("log_in", { messages: { error: null } });
+    }
+});
+
+//----image upload---//
+
 const flash = require("express-flash");
 const fileUpload = require("express-fileupload");
 //sharp - resizes the images 
@@ -148,6 +193,7 @@ const sharp = require("sharp");
 // need to npm install almost any require things apart from fs
 //fs/promises--> can use await and dont need to use callback by ourselves
 const fs = require("fs/promises");
+const { STATUS_CODES } = require("http");
 
 router.use(
     session({
@@ -169,11 +215,16 @@ router.use(
 );
 
 // TO DO: change the path to image page
-router.get("/create_post", (req, res) => {
-    res.render("create_post", { messages: { error: null } });
+router.get("/user_homepage", (req, res) => {
+    res.render("user_homepage", { messages: { error: null } });
 });
 
 const acceptedTypes = ["image/gif", "image/jpeg", "image/png"];
+
+router.get("/create_post", (req, res) => {
+    return res.render("create_post");
+});
+
 
 router.post("/upload", async (req, res) => {
     const image = req.files.pic;
@@ -211,8 +262,8 @@ router.post("/upload", async (req, res) => {
             } catch (error) {
                 console.log(error);
             }
-            //todo: try res.redirect
-            res.redirect("/upload", {
+            
+            res.render("/create_post", {
                 image: "uploads/resized/" + image.name,
                 image_name: image.name,
             });
@@ -224,7 +275,6 @@ router.post("/upload", async (req, res) => {
     }
     //----------------------------------------------connect db for images ----------------------------//
     //build the connection to mysql
-    let connection = mysql.createConnection(DBCONFIG);
     connection.connect(function (err) {
         if (err) throw err;
         else console.log("successful connection")
@@ -245,7 +295,7 @@ router.post("/upload", async (req, res) => {
             messages: { error: "Filesize too large" },
         });
     }
-    
+
     connection.end();
 
 });
@@ -256,7 +306,7 @@ router.post("/upload", async (req, res) => {
 //--------------------------------------------------------  TO DO: create post ---------------------------------------//
 
 
-router.post("/post_complete", urlencodedParser, (req, res) => {
+router.post("/post_complete", (req, res) => {
     let post_title = req.body.post_title;
     let caption = req.body.caption;
 
@@ -265,7 +315,6 @@ router.post("/post_complete", urlencodedParser, (req, res) => {
     ) VALUES (\
         '${post_title}', '${caption}', '${user_id}'\
     );`
-    let connection = mysql.createConnection(DBCONFIG);
     connection.connect(function (err) {
         if (err) throw err;
         else console.log("successful connection")

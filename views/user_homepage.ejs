@@ -1,15 +1,34 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <link rel="stylesheet" href="/stylesheet.css" />
-
-    <title>Log in</title>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>post create</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(document).on("focus", "#pic", () => {
+                $(".error").remove();
+            });
+        });
+    </script>
 </head>
 
 <body>
-    <div action="/user_hompage" method="post">
-        Hello! <% data.user_name%>
+    <div class="wrapper">
+
+        <div action="/user_homepage" method="get">
+            Hello! <%= data.user_name%>
+
+            <button class="createNewPosts"> <a href="create_post"> Create new posts</a></button>
+
+            <!-- post history: select from post table where userid = userid 
+            link to create_post -->
+        </div>
+
     </div>
 </body>
 
