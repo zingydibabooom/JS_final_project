@@ -207,7 +207,7 @@ router.use(flash());
 router.use(
     fileUpload({
         limits: {
-            fileSize: 2000000, // Around 2MB
+            fileSize: 3000000, // Around 2MB
         },
         abortOnLimit: true,
         //   limitHandler: fileTooBig,
@@ -228,19 +228,22 @@ router.get("/create_post", (req, res) => {
 
 router.post("/upload", async (req, res) => {
     const image = req.files.pic;
-
+    const user_id = req.session.user_id;
     if (acceptedTypes.indexOf(image.mimetype) >= 0) {
         //where is it going to save the file to
+        // use user ID and post time as image name for unique identifier
+        var today = new Date();
+        var date = today.getDate()+ "-" +(today.getMonth()+1)+"-" + today.getFullYear();
+        var time = today.getHours()+ ":" + today.getMinutes() + ":" + today.getSeconds();
+        var cur_time = date +"-" + time;
+        var imageNewName = user_id + "-" + cur_time +"."+ image.name.split(".").pop();
         const imageUploaded = __dirname + "/../assets/uploads/" + image.name;
         //const localFileData = `{_direname}/assets/uploads/${imageFile.name}`;
-
         //copy the file and do the editting
         // const resizedImagePath =
         //   __dirname + "/assets/uploads/resized/" + image.name;
-        const editedFile = __dirname + "/../assets/uploads/resized/" + image.name;
+        const editedFile = __dirname + "/../assets/uploads/resized/" + imageNewName;
         //   const editedUrl = _dirname+ "uploads/resized/" + image.name;
-        console.log(image);
-
         //resize the picture
         await image.mv(imageUploaded).then(async () => {
             try {
@@ -254,7 +257,7 @@ router.post("/upload", async (req, res) => {
                         fs.unlink(imageUploaded, function (err) {
                             if (err) throw err;
                             console.log(imageUploaded + " deleted");
-
+                           // 
                         });
                     });
                 // with fs/promises: await fs.unlink(imageDestinationPath); it deletes the original file 
@@ -263,9 +266,9 @@ router.post("/upload", async (req, res) => {
                 console.log(error);
             }
             
-            res.render("/create_post", {
-                image: "uploads/resized/" + image.name,
-                image_name: image.name,
+            res.render("create_post", {
+                image_URL: "/uploads/resized/" + imageNewName,
+                image_name: imageNewName,
             });
         });
     } else {
@@ -280,10 +283,9 @@ router.post("/upload", async (req, res) => {
         else console.log("successful connection")
     });
     //if there is no error, open query, insert to table
-    const query = `INSERT INTO image (image_name, post_id)\
+    const query = `INSERT INTO post (image_name, user_id)\
     VALUES (\
-        '${image.name}', '${post_id}'\
-    );`
+        '${imageNewName}','${user_id}' );`
     connection.query(query, function (err, result, fields) {
         if (err) throw err;
         console.log(result);
@@ -299,8 +301,6 @@ router.post("/upload", async (req, res) => {
     connection.end();
 
 });
-
-
 
 
 //--------------------------------------------------------  TO DO: create post ---------------------------------------//
