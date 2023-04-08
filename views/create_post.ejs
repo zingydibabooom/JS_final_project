@@ -23,8 +23,8 @@
     <div class="wrapper">
       <h1>Your Image</h1>
       <!-- locals. + the thing you want to pass to here, eg. if it is image, then locals.image, if it is data, locals.data -->
-      <%if (locals.data) { %>   
-        <img src="<%= data.image_URL %> " alt="<%= data.image_URL %>" />
+      <%if (locals.data) { %>
+        <img src="<%= data.image_URL %> " alt="<%= data.image_name %>" />
         <% } %>
     </div>
     <% if(messages.error){%>
@@ -40,11 +40,15 @@
           </form>
           Accepted file types are .jpg, .png, .gif, not exceeding 2MB in file size
           <% } %>
-            <form action="/create_post" method="get">
+            <form action="/post_complete" method="post">
               <div class="flex-row">
                 <div class="col-md-auto mt-5">
-                  <label for="post_title" value="post_title"> Post Title (no more than 50 characters) </label>
-                  <input type="text" class="form-control" name="post_title" id="post_title">
+                  <%if (locals.data) { %>
+                    <!-- to give the image_name got from first form to the javascript-->
+                      <input type="hidden" name="image_name" value="<%=data.image_name %>">
+                  <% } %>
+                      <label for="post_title" value="post_title"> Post Title (no more than 50 characters) </label>
+                      <input type="text" class="form-control" name="post_title" id="post_title">
                 </div>
               </div>
               <br>

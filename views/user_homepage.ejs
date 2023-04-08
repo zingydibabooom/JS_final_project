@@ -22,7 +22,7 @@
 
         <div action="/user_homepage" method="get">
             Hello! <%= data.user_name%>
-
+             <img src="<%=data.imageURL %>">
                 <button class="createNewPosts"> <a href="create_post"> Create new posts</a></button>
 
                 <!-- post history: select from post table where userid = userid 

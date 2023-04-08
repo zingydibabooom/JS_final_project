@@ -29,6 +29,9 @@ router.use(session({
     saveUninitialized: false
 }));
 
+// the prefix to an image's path (before image name)
+const image_directory_str = "uploads/resized/";
+
 // Optionally use onReady() to get a promise that resolves when store is ready.
 sessionStore.onReady().then(() => {
     // MySQL session store ready for use.
@@ -121,7 +124,7 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
     connection.query(query, function (err, result, fields) {
         if (err) throw err; //if throw err here the website will stop running 
         console.log(result);
-        connection.end();
+
     });
     // conection.connect((err)=>{
     //     console.log ("connected?", err);
@@ -140,7 +143,7 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
             }
         }
     }
-
+    connection.end();
 });
 
 
@@ -173,12 +176,27 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
 
 router.get("/user_homepage", (req, res) => {
     if (userLoggedIn(req) == true) { // code run if user is logged in - session is active
+        var user_id = req.session.user_id;
         var user_name = req.session.user_name;
-        res.render("user_homepage", {
-            data: {
-                user_name,
-            }
-        })
+        let connection = mysql.createConnection(DB_CONFIG);
+        //get all the user data of this user from db
+        const query = `SELECT image_name from post\
+            WHERE user_id = '${user_id}'`;
+        let imageNameforPath = "";
+        connection.query(query, function (err, result, fields) {
+            if (err) throw err; //if throw err here the website will stop running
+            console.log(result);
+            imageNameforPath = result[0].image_name;
+
+            res.render("user_homepage", {
+                data: {
+                    user_name: user_name,
+                    imageURL: image_directory_str + imageNameforPath,
+                }
+            })
+        });
+
+        
     } else { // if not logged in
         res.render("log_in", { messages: { error: null } });
     }
@@ -226,6 +244,7 @@ router.get("/create_post", (req, res) => {
 });
 
 
+
 router.post("/upload", async (req, res) => {
     const image = req.files.pic;
     const user_id = req.session.user_id;
@@ -269,7 +288,7 @@ router.post("/upload", async (req, res) => {
 
             res.render("create_post", {
                 data: {
-                    image_URL: "uploads/resized/" + imageNewName,
+                    image_URL: image_directory_str + imageNewName,
                     image_name: imageNewName,
                 }
             });
@@ -279,8 +298,6 @@ router.post("/upload", async (req, res) => {
             messages: { error: "I don't believe that's an image" },
         });
     }
-    const postTitle = req.body.post_title;
-    const postCaption = req.body.caption;
     //----------------------------------------------connect db for images ----------------------------//
     //build the connection to mysql
     connection.connect(function (err) {
@@ -288,13 +305,15 @@ router.post("/upload", async (req, res) => {
         else console.log("successful connection")
     });
     //if there is no error, open query, insert to table
-    const query = `INSERT INTO post (image_name, user_id, post_title, post_text)\
+    const query = `INSERT INTO post (image_name, user_id)\
     VALUES (\
-        '${imageNewName}','${user_id}', '${postTitle}', '${postCaption}');`
+        '${imageNewName}','${user_id}');`
+
     connection.query(query, function (err, result, fields) {
         if (err) throw err;
         console.log(result);
     });
+
     function fileTooBig(req, res, next) {
         //or res.send?
         res.render("create_post", {
@@ -304,26 +323,26 @@ router.post("/upload", async (req, res) => {
     }
 
     connection.end();
-
 });
 
 
 //--------------------------------------------------------  TO DO: create post ---------------------------------------//
 
-
 router.post("/post_complete", (req, res) => {
-    let post_title = req.body.post_title;
-    let caption = req.body.caption;
-
-    const query = `INSERT INTO post(\
-        post_title, post_text, date, user_id\
-    ) VALUES (\
-        '${post_title}', '${caption}', '${user_id}'\
-    );`
+    let connection = mysql.createConnection(DB_CONFIG);
     connection.connect(function (err) {
         if (err) throw err;
         else console.log("successful connection")
     });
+    let post_title = req.body.post_title;
+    let caption = req.body.caption;
+    // get image_name from the hidden element in ejs form.
+    let image_name = req.body.image_name;
+    // upddate the post_title and post_text column in the database that has the correspondinng imagename in the entry
+    const query = `UPDATE post \
+       SET post_title = '${post_title}', post_text ='${caption}', post_date = CURDATE()\
+       WHERE image_name = '${image_name}'`;
+
     connection.query(query, function (err, result, fields) {
         if (err) throw err;
         console.log(result);
@@ -331,15 +350,6 @@ router.post("/post_complete", (req, res) => {
 
     connection.end();
 });
-
-
-
-
-
-
-
-
-
 
 
 
