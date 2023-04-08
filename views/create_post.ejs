@@ -1,65 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>post create</title>
-    <link rel="stylesheet" href="/css/style.css" />
-    <script
-      type="text/javascript"
-      src="https://code.jquery.com/jquery-1.11.3.js"
-    ></script>
-    <script>
-      $(document).ready(function () {
-        $(document).on("focus", "#pic", () => {
-          $(".error").remove();
-        });
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>post create</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.js"></script>
+  <script>
+    $(document).ready(function () {
+      $(document).on("focus", "#pic", () => {
+        $(".error").remove();
       });
-    </script>
-  </head>
+    });
+  </script>
+</head>
 
 <body>
   <div class="wrapper">
-      <p>
-        <div class="wrapper">
-          <h1>Your Image</h1>
-          <%if (locals.image) { %>
-          <img src="<%= image_URL %> " alt="<%= image_name %>" />
+    <p>
+    <div class="wrapper">
+      <h1>Your Image</h1>
+      <!-- locals. + the thing you want to pass to here, eg. if it is image, then locals.image, if it is data, locals.data -->
+      <%if (locals.data) { %>   
+        <img src="<%= data.image_URL %> " alt="<%= data.image_URL %>" />
+        <% } %>
+    </div>
+    <% if(messages.error){%>
+      <span class="error">
+        <%= messages.error %>
+      </span>
+      <%}%>
+        </p>
+        <%if (!locals.data) { %>
+          <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="pic" id="pic" />
+            <button type="submit">Upload</button>
+          </form>
+          Accepted file types are .jpg, .png, .gif, not exceeding 2MB in file size
           <% } %>
-        </div>
-        Accepted file types are .jpg, .png, .gif, not exceeding 2MB in file size
-        <% if(messages.error){%>
-        <span class="error"><%= messages.error %></span>
-        <%}%>
-      </p>
-      <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="pic" id="pic" />
-        <button type="submit">Upload</button>
-      </form>
-      <form action="/create_post" method="get">
-        <div class="flex-row">
-            <div class="col-md-auto mt-5" >
-                <label for="post_title" value="post_title"> Post Title (no more than 50 characters) </label>
-                <input type="text" class="form-control" name="login_username" id="login_username">
-            </div>
-        </div>
-        <br>
-        <br>
-        <div class="form-group">
-            <div class="col-md-6">
-                <label for="caption" value="caption">Post Caption (no more than 200 characters)</label>
-                <input type="text" class="form-control" name="password" id="password">
-            </div>
-        </div>              
-            </div>
-        </div>
-        <button class="submit_post" > Post </button>
-    </form>
+            <form action="/create_post" method="get">
+              <div class="flex-row">
+                <div class="col-md-auto mt-5">
+                  <label for="post_title" value="post_title"> Post Title (no more than 50 characters) </label>
+                  <input type="text" class="form-control" name="post_title" id="post_title">
+                </div>
+              </div>
+              <br>
+              <br>
+              <div class="form-group">
+                <div class="col-md-6">
+                  <label for="caption" value="caption">Post Caption (no more than 200 characters)</label>
+                  <input type="text" class="form-control" name="caption" id="caption">
+                </div>
+              </div>
+  </div>
+  </div>
+  <button class="submit_post"> Post </button>
+  </form>
   </div>
 </body>
 
 </html>
-
-
-

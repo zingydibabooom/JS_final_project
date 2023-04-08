@@ -18,24 +18,24 @@ const DB_CONFIG = {
 let connection = mysql.createConnection(DB_CONFIG);
 const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
-const sessionStore = new MySQLStore(DB_CONFIG); 
+const sessionStore = new MySQLStore(DB_CONFIG);
 
 
 router.use(session({
-	key: 'session_cookie_name',
-	secret: 'session_cookie_secret',
-	store: sessionStore,
-	resave: false,
-	saveUninitialized: false
+    key: 'session_cookie_name',
+    secret: 'session_cookie_secret',
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false
 }));
 
 // Optionally use onReady() to get a promise that resolves when store is ready.
 sessionStore.onReady().then(() => {
-	// MySQL session store ready for use.
-	console.log('MySQLStore ready');
+    // MySQL session store ready for use.
+    console.log('MySQLStore ready');
 }).catch(error => {
-	// Something went wrong.
-	console.error(error);
+    // Something went wrong.
+    console.error(error);
 });
 
 
@@ -68,7 +68,7 @@ router.post("/authentic_logIn", async (req, res) => {
     req.session.regenerate(function (err) {
         if (err) console.log(err);
         //authentication - check user credentials against database
-        
+
         connection.connect(function (err) {
             if (err) throw err;
             else console.log("successful connection")
@@ -79,17 +79,17 @@ router.post("/authentic_logIn", async (req, res) => {
          user_name = '${targetUserName}' AND user_password = '${targetPassword}' ;`;
         connection.query(query, function (err, result, fields) {
             if (err) throw err;
-            else if (result.length === 0){ // not logged in
-               
+            else if (result.length === 0) { // not logged in
+
                 //TODO: prompt wrong username or password
 
-            } else{ //logged in
+            } else { //logged in
                 // unpack sql result and get uder id(primary key), then assign to session.user_id
                 // then use that to insnert into post table
                 req.session.user_id = result[0].user_id;
                 req.session.user_name = result[0].user_name;
-                req.session.save(function(err){
-                    if(err) return next (err);
+                req.session.save(function (err) {
+                    if (err) return next(err);
                     res.redirect("/user_homepage");
                 })
             }
@@ -123,9 +123,9 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
         console.log(result);
         connection.end();
     });
-// conection.connect((err)=>{
-//     console.log ("connected?", err);
-// });
+    // conection.connect((err)=>{
+    //     console.log ("connected?", err);
+    // });
 
     //Error messages
     const errors = validationResult(req);
@@ -207,7 +207,7 @@ router.use(flash());
 router.use(
     fileUpload({
         limits: {
-            fileSize: 3000000, // Around 2MB
+            fileSize: 10000000, // Around 5MB
         },
         abortOnLimit: true,
         //   limitHandler: fileTooBig,
@@ -233,10 +233,11 @@ router.post("/upload", async (req, res) => {
         //where is it going to save the file to
         // use user ID and post time as image name for unique identifier
         var today = new Date();
-        var date = today.getDate()+ "-" +(today.getMonth()+1)+"-" + today.getFullYear();
-        var time = today.getHours()+ ":" + today.getMinutes() + ":" + today.getSeconds();
-        var cur_time = date +"-" + time;
-        var imageNewName = user_id + "-" + cur_time +"."+ image.name.split(".").pop();
+        var date = today.getDate() + "-" + (today.getMonth() + 1) + "-" + today.getFullYear();
+        // can't use ":" in filenames because it will be converted to "/" whcih will be mistaken for path name
+        var time = today.getHours() + "_" + today.getMinutes() + "_" + today.getSeconds();
+        var cur_time = date + "-" + time;
+        var imageNewName = user_id + "-" + cur_time + "." + image.name.split(".").pop();
         const imageUploaded = __dirname + "/../assets/uploads/" + image.name;
         //const localFileData = `{_direname}/assets/uploads/${imageFile.name}`;
         //copy the file and do the editting
@@ -257,7 +258,7 @@ router.post("/upload", async (req, res) => {
                         fs.unlink(imageUploaded, function (err) {
                             if (err) throw err;
                             console.log(imageUploaded + " deleted");
-                           // 
+                            // 
                         });
                     });
                 // with fs/promises: await fs.unlink(imageDestinationPath); it deletes the original file 
@@ -265,10 +266,12 @@ router.post("/upload", async (req, res) => {
             } catch (error) {
                 console.log(error);
             }
-            
+
             res.render("create_post", {
-                image_URL: "/uploads/resized/" + imageNewName,
-                image_name: imageNewName,
+                data: {
+                    image_URL: "uploads/resized/" + imageNewName,
+                    image_name: imageNewName,
+                }
             });
         });
     } else {
@@ -276,6 +279,8 @@ router.post("/upload", async (req, res) => {
             messages: { error: "I don't believe that's an image" },
         });
     }
+    const postTitle = req.body.post_title;
+    const postCaption = req.body.caption;
     //----------------------------------------------connect db for images ----------------------------//
     //build the connection to mysql
     connection.connect(function (err) {
@@ -283,9 +288,9 @@ router.post("/upload", async (req, res) => {
         else console.log("successful connection")
     });
     //if there is no error, open query, insert to table
-    const query = `INSERT INTO post (image_name, user_id)\
+    const query = `INSERT INTO post (image_name, user_id, post_title, post_text)\
     VALUES (\
-        '${imageNewName}','${user_id}' );`
+        '${imageNewName}','${user_id}', '${postTitle}', '${postCaption}');`
     connection.query(query, function (err, result, fields) {
         if (err) throw err;
         console.log(result);
