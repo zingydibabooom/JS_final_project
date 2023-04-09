@@ -160,11 +160,12 @@ router.get("/user_homepage", (req, res) => {
             }
             console.log(result);
 
-            res.render("user_homepage", {
+            res.render("show_post", {
                 data: {
                     user_name: user_name,
                     result: result,
                     isUserHomepage: true,
+                    isLoggedIn: userLoggedIn(),
                 }
             })
         });
@@ -331,15 +332,13 @@ function insertImageIntoDatabase(imageNewName, user_id) {
 }
 
 // --------------------------------------get all the db on browser page----------------//
-router.get("/image_showcase", (req, res) => {
-    res.render("show_post");
-});
-
 
 router.get("/image_showcase", (req, res) => {
         let connection = mysql.createConnection(DB_CONFIG);
         //get all the user data of this user from db
-        const query = `SELECT * from post`;
+        const query = `SELECT P.*, U.user_name\
+        FROM post as P, user_credential as U\
+        WHERE P.user_id = U.user_id`;
         connection.query(query, function (err, result, fields) {
             if (err) throw err; 
             for (let i = 0; i < result.length; i++) {
@@ -347,15 +346,31 @@ router.get("/image_showcase", (req, res) => {
                 result[i].image_path = image_directory_str + result[i].image_name;
             }
             console.log(result);
-            res.render("user_homepage", {
+            res.render("show_post", {
                 data: {
-                    user_name: user_name,
                     result: result,
                     isUserHomepage: false,
+                    isLoggedIn: userLoggedIn(),
                 }
             });
         });
 });
+
+
+//--------------------------------------comments-------------------------//
+router.post("/comments", (req, res)=>{
+    if (userLoggedIn(req) == true) {
+    // comment enables
+
+
+    }else{
+    //TODO: if the users click comment, it will be taken to the log-in page
+
+
+    }
+
+})
+
 
 module.exports = { router };
 

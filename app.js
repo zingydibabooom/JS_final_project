@@ -7,7 +7,7 @@ var app = express();
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "./views"));
 app.use(express.static(path.join(__dirname, "./assets")));
-// ian's change: require this module before app.use(sessionn());
+// require this module before app.use(sessionn());
 const session = require("express-session");
 
 const http = require("http").createServer(app); 

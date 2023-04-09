@@ -1,44 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Image</title>
+    <title>post create</title>
     <link rel="stylesheet" href="/css/style.css" />
-  </head>
-  <body>
-    <div class="wrapper">
-      <div class="posts">
-        <img src="<%=post.image_path%>">
-        <br>
-        <%= post.post_title>
-        <br>
-        <%=post.post_text>
-      </div>
-      <div class="comments">
-        <form action="/addcomment" method="POST" id="addcomment">
-          <h3><%= locals.name ? name : 'stranger'; %></h3>
-          <input
-            type="hidden"
-            name="name"
-            id="name"
-            value="<%= locals.name ? name : 'stranger'; %>"
-          />
-          <textarea
-            name="comment"
-            id="comment"
-            cols="30"
-            rows="10"
-            placeholder="Your comment"
-          ></textarea>
-          <button type="submit">Add Comment</button>
-        </form>
-        
-        <h3>Comments:</h3>
-        <div id="comments"><%= locals.comments ? comments : ''; %></div>
-        </form>
-      </div>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(document).on("focus", "#pic", () => {
+                $(".error").remove();
+            });
+        });
+    </script>
+</head>
 
-  </body>
+<body>
+    <div class="wrapper">
+
+        <% if (data.isUserHomepage==true) { %>
+            Hello! <%= data.user_name%>
+                <button class="createNewPosts"> <a href="create_post"> Create new posts</a></button>
+         <% }; %>
+                    <!-- <img src="<%=data.imageURL %>"> -->
+        <br>
+        <% data.result.forEach(function(post){ %>
+            <!-- display each post info -->
+            <!-- //TODO: display the title and the caption -->
+            <%= post.user_name%>
+            <br>
+            <%= post.post_title%>
+            <br>
+            <%= post.post_text%>
+            <br>
+            <%= post.post_date%>
+            <img src="<%=post.image_path%>">  
+        <% if(data.isLoggedIn == true){ %>
+            <form action="/show_post" method="post">
+                <div class="form-group">
+                    <label for="CommentTextArea">Write your comments here </label>
+                    <textarea class="form-control" id="CommentTextArea" rows="3"></textarea>
+                  </div>
+            <button class="comments"></button>
+            </form>
+        <% }); %>
+
+                            <!-- post history: select from post table where userid = userid 
+            link to create_post -->
+    </div>
+
+
+    </div>
+</body>
+
 </html>
