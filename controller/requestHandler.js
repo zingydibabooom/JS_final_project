@@ -103,8 +103,6 @@ router.post("/authentic_logIn", async (req, res) => {
 
 
 //-----------------------------------------------------for Log in & Register ----------------------------------//
-
-
 router.get("/registration", (req, res) => {
     return res.render("registration");
 })
@@ -126,9 +124,6 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
         console.log(result);
 
     });
-    // conection.connect((err)=>{
-    //     console.log ("connected?", err);
-    // });
 
     //Error messages
     const errors = validationResult(req);
@@ -146,34 +141,7 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
     connection.end();
 });
 
-
-//---------------------------------------------------------TO DO start post ----------------------------------------//
-
-// router.post("/upload", urlencodedParser, validationRule, (req, res) => {
-
-//     let username = req.body.username;
-//     let password = req.body.password;
-//     let email = req.body.email;
-//     //if there is no error, open query:
-//     const query = `INSERT INTO user_credential(\
-//         user_name, user_password, user_email\
-//     ) VALUES (\
-//         '${username}', '${password}', '${email}'\
-//     );`
-//     let connection = mysql.createConnection(DB_CONFIG);
-//     connection.connect(function (err) {
-//         if (err) throw err;
-//         else console.log("successful connection")
-//     });
-//     connection.query(query, function (err, result, fields) {
-//         if (err) throw err;
-//         console.log(result);
-//     });
-//     connection.end();
-// });
-
 //--------------------------------------------------------post your work-----------------------------------------//
-
 router.get("/user_homepage", (req, res) => {
     if (userLoggedIn(req) == true) { // code run if user is logged in - session is active
         var user_id = req.session.user_id;
@@ -196,6 +164,7 @@ router.get("/user_homepage", (req, res) => {
                 data: {
                     user_name: user_name,
                     result: result,
+                    isUserHomepage: true,
                 }
             })
         });
@@ -229,25 +198,18 @@ router.use(flash());
 router.use(
     fileUpload({
         limits: {
-            fileSize: 10000000, // Around 5MB
+            fileSize: 10000000, // Around 10MB
         },
         abortOnLimit: true,
         //   limitHandler: fileTooBig,
     })
 );
 
-// TO DO: change the path to image page
-router.get("/user_homepage", (req, res) => {
-    res.render("user_homepage", { messages: { error: null } });
-});
-
 const acceptedTypes = ["image/gif", "image/jpeg", "image/png"];
 
 router.get("/create_post", (req, res) => {
     return res.render("create_post");
 });
-
-
 
 router.post("/upload", async (req, res) => {
     const image = req.files.pic;
@@ -316,8 +278,6 @@ router.post("/post_complete", (req, res) => {
     connection.end();
 });
 
-
-
 async function receiveAndResizeImage(image, imageUploaded, editedFile, res, imageNewName) {
     await image.mv(imageUploaded).then(async () => {
         try {
@@ -367,7 +327,35 @@ function insertImageIntoDatabase(imageNewName, user_id) {
             throw err;
         console.log(result);
     });
+    
 }
+
+// --------------------------------------get all the db on browser page----------------//
+router.get("/image_showcase", (req, res) => {
+    res.render("show_post");
+});
+
+
+router.get("/image_showcase", (req, res) => {
+        let connection = mysql.createConnection(DB_CONFIG);
+        //get all the user data of this user from db
+        const query = `SELECT * from post`;
+        connection.query(query, function (err, result, fields) {
+            if (err) throw err; 
+            for (let i = 0; i < result.length; i++) {
+                // imageURL = image_directory_str + result[i].image_name;
+                result[i].image_path = image_directory_str + result[i].image_name;
+            }
+            console.log(result);
+            res.render("user_homepage", {
+                data: {
+                    user_name: user_name,
+                    result: result,
+                    isUserHomepage: false,
+                }
+            });
+        });
+});
 
 module.exports = { router };
 

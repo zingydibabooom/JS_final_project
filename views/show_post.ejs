@@ -9,6 +9,36 @@
   </head>
   <body>
     <div class="wrapper">
-      <div action="">
+      <div class="posts">
+        <img src="<%=post.image_path%>">
+        <br>
+        <%= post.post_title>
+        <br>
+        <%=post.post_text>
+      </div>
+      <div class="comments">
+        <form action="/addcomment" method="POST" id="addcomment">
+          <h3><%= locals.name ? name : 'stranger'; %></h3>
+          <input
+            type="hidden"
+            name="name"
+            id="name"
+            value="<%= locals.name ? name : 'stranger'; %>"
+          />
+          <textarea
+            name="comment"
+            id="comment"
+            cols="30"
+            rows="10"
+            placeholder="Your comment"
+          ></textarea>
+          <button type="submit">Add Comment</button>
+        </form>
+        
+        <h3>Comments:</h3>
+        <div id="comments"><%= locals.comments ? comments : ''; %></div>
+        </form>
+      </div>
+
   </body>
 </html>
