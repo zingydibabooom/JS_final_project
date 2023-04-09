@@ -180,23 +180,27 @@ router.get("/user_homepage", (req, res) => {
         var user_name = req.session.user_name;
         let connection = mysql.createConnection(DB_CONFIG);
         //get all the user data of this user from db
-        const query = `SELECT image_name from post\
+        const query = `SELECT * from post\
             WHERE user_id = '${user_id}'`;
-        let imageNameforPath = "";
         connection.query(query, function (err, result, fields) {
             if (err) throw err; //if throw err here the website will stop running
+            // result is an array of key-value objects
+            // add the image directory prefix to each image name before sendingn to ejs
+            for (let i = 0; i < result.length; i++) {
+                // imageURL = image_directory_str + result[i].image_name;
+                result[i].image_path = image_directory_str + result[i].image_name;
+            }
             console.log(result);
-            imageNameforPath = result[0].image_name;
 
             res.render("user_homepage", {
                 data: {
                     user_name: user_name,
-                    imageURL: image_directory_str + imageNameforPath,
+                    result: result,
                 }
             })
         });
 
-        
+
     } else { // if not logged in
         res.render("log_in", { messages: { error: null } });
     }
@@ -265,34 +269,7 @@ router.post("/upload", async (req, res) => {
         const editedFile = __dirname + "/../assets/uploads/resized/" + imageNewName;
         //   const editedUrl = _dirname+ "uploads/resized/" + image.name;
         //resize the picture
-        await image.mv(imageUploaded).then(async () => {
-            try {
-                //this process will take a long time, wait for it to finish
-                await sharp(imageUploaded)
-                    .resize(750)
-                    .toFile(editedFile)
-                    .then(() => {
-                        //delete the original file
-                        //or get rid of  and add: await fs.unlink
-                        fs.unlink(imageUploaded, function (err) {
-                            if (err) throw err;
-                            console.log(imageUploaded + " deleted");
-                            // 
-                        });
-                    });
-                // with fs/promises: await fs.unlink(imageDestinationPath); it deletes the original file 
-                //res.send("done") --> work like console.log but on the page
-            } catch (error) {
-                console.log(error);
-            }
-
-            res.render("create_post", {
-                data: {
-                    image_URL: image_directory_str + imageNewName,
-                    image_name: imageNewName,
-                }
-            });
-        });
+        await receiveAndResizeImage(image, imageUploaded, editedFile, res, imageNewName);
     } else {
         res.render("create_post", {
             messages: { error: "I don't believe that's an image" },
@@ -300,19 +277,7 @@ router.post("/upload", async (req, res) => {
     }
     //----------------------------------------------connect db for images ----------------------------//
     //build the connection to mysql
-    connection.connect(function (err) {
-        if (err) throw err;
-        else console.log("successful connection")
-    });
-    //if there is no error, open query, insert to table
-    const query = `INSERT INTO post (image_name, user_id)\
-    VALUES (\
-        '${imageNewName}','${user_id}');`
-
-    connection.query(query, function (err, result, fields) {
-        if (err) throw err;
-        console.log(result);
-    });
+    insertImageIntoDatabase(imageNewName, user_id);
 
     function fileTooBig(req, res, next) {
         //or res.send?
@@ -353,5 +318,57 @@ router.post("/post_complete", (req, res) => {
 
 
 
+async function receiveAndResizeImage(image, imageUploaded, editedFile, res, imageNewName) {
+    await image.mv(imageUploaded).then(async () => {
+        try {
+            //this process will take a long time, wait for it to finish
+            await sharp(imageUploaded)
+                .resize(750)
+                .toFile(editedFile)
+                .then(() => {
+                    //delete the original file
+                    //or get rid of  and add: await fs.unlink
+                    fs.unlink(imageUploaded, function (err) {
+                        if (err)
+                            throw err;
+                        console.log(imageUploaded + " deleted");
+                        // 
+                    });
+                });
+            // with fs/promises: await fs.unlink(imageDestinationPath); it deletes the original file 
+            //res.send("done") --> work like console.log but on the page
+        } catch (error) {
+            console.log(error);
+        }
+
+        res.render("create_post", {
+            data: {
+                image_URL: image_directory_str + imageNewName,
+                image_name: imageNewName,
+            }
+        });
+    });
+}
+
+function insertImageIntoDatabase(imageNewName, user_id) {
+    connection.connect(function (err) {
+        if (err)
+            throw err;
+        else
+            console.log("successful connection");
+    });
+    //if there is no error, open query, insert to table
+    const query = `INSERT INTO post (image_name, user_id)\
+    VALUES (\
+        '${imageNewName}','${user_id}');`;
+
+    connection.query(query, function (err, result, fields) {
+        if (err)
+            throw err;
+        console.log(result);
+    });
+}
 
 module.exports = { router };
+
+

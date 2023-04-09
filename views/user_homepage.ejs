@@ -22,10 +22,14 @@
 
         <div action="/user_homepage" method="get">
             Hello! <%= data.user_name%>
-             <img src="<%=data.imageURL %>">
-                <button class="createNewPosts"> <a href="create_post"> Create new posts</a></button>
+                <!-- <img src="<%=data.imageURL %>"> -->
+                <% data.result.forEach(function(post){ %>
+                    <!-- display each post info -->
+                    <img src="<%=post.image_path%>">
+                    <% }); %>
+                        <button class="createNewPosts"> <a href="create_post"> Create new posts</a></button>
 
-                <!-- post history: select from post table where userid = userid 
+                        <!-- post history: select from post table where userid = userid 
             link to create_post -->
         </div>
 
