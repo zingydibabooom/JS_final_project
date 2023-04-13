@@ -14,7 +14,7 @@ const DB_CONFIG = {
     user: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD
 };
-//Newly added  should i have it in app.js?
+
 let connection = mysql.createConnection(DB_CONFIG);
 const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
@@ -141,6 +141,9 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
     connection.end();
 });
 
+//----------------------------------------------Log out ---------------------------------------//
+
+
 //--------------------------------------------------------post your work-----------------------------------------//
 router.get("/user_homepage", (req, res) => {
     if (userLoggedIn(req) == true) { // code run if user is logged in - session is active
@@ -150,6 +153,7 @@ router.get("/user_homepage", (req, res) => {
         //get all the user data of this user from db
         const query = `SELECT * from post\
             WHERE user_id = '${user_id}'`;
+        // const commentsQuery = "SELECT"
         connection.query(query, function (err, result, fields) {
             if (err) throw err; //if throw err here the website will stop running
             // result is an array of key-value objects
@@ -165,7 +169,7 @@ router.get("/user_homepage", (req, res) => {
                     user_name: user_name,
                     result: result,
                     isUserHomepage: true,
-                    isLoggedIn: userLoggedIn(),
+                    isLoggedIn: userLoggedIn(req),
                 }
             })
         });
@@ -185,7 +189,7 @@ const sharp = require("sharp");
 // need to npm install almost any require things apart from fs
 //fs/promises--> can use await and dont need to use callback by ourselves
 const fs = require("fs/promises");
-const { STATUS_CODES } = require("http");
+// const { STATUS_CODES } = require("http");
 
 router.use(
     session({
@@ -223,7 +227,7 @@ router.post("/upload", async (req, res) => {
         // can't use ":" in filenames because it will be converted to "/" whcih will be mistaken for path name
         var time = today.getHours() + "_" + today.getMinutes() + "_" + today.getSeconds();
         var cur_time = date + "-" + time;
-        var imageNewName = user_id + "-" + cur_time + "." + image.name.split(".").pop();
+        var imageNewName = user_id + "-" + cur_time + "." + image.name.split(".").pop(); //get the extension after .
         const imageUploaded = __dirname + "/../assets/uploads/" + image.name;
         //const localFileData = `{_direname}/assets/uploads/${imageFile.name}`;
         //copy the file and do the editting
@@ -243,7 +247,6 @@ router.post("/upload", async (req, res) => {
     insertImageIntoDatabase(imageNewName, user_id);
 
     function fileTooBig(req, res, next) {
-        //or res.send?
         res.render("create_post", {
             name: "",
             messages: { error: "Filesize too large" },
@@ -270,7 +273,6 @@ router.post("/post_complete", (req, res) => {
     const query = `UPDATE post \
        SET post_title = '${post_title}', post_text ='${caption}', post_date = CURDATE()\
        WHERE image_name = '${image_name}'`;
-
     connection.query(query, function (err, result, fields) {
         if (err) throw err;
         console.log(result);
@@ -336,7 +338,7 @@ function insertImageIntoDatabase(imageNewName, user_id) {
 router.get("/image_showcase", (req, res) => {
         let connection = mysql.createConnection(DB_CONFIG);
         //get all the user data of this user from db
-        const query = `SELECT P.*, U.user_name\
+        const query = `SELECT P.*, U.user_name, post_id\
         FROM post as P, user_credential as U\
         WHERE P.user_id = U.user_id`;
         connection.query(query, function (err, result, fields) {
@@ -350,28 +352,47 @@ router.get("/image_showcase", (req, res) => {
                 data: {
                     result: result,
                     isUserHomepage: false,
-                    isLoggedIn: userLoggedIn(),
+                    isLoggedIn: userLoggedIn(req),
+
                 }
             });
         });
 });
 
+//------------------------comments---------------------------------//
+router.post("/addComment", (req, res)=>{
+    let connection = mysql.createConnection(DB_CONFIG);
+    const postId = req.body.postId;
+    const commentText = req.body.commentText;
 
-//--------------------------------------comments-------------------------//
-router.post("/comments", (req, res)=>{
-    if (userLoggedIn(req) == true) {
-    // comment enables
+    const likeQuery =`SELECT COUNT(*) AS n_likes FROM user_like WHERE post_id = '${postId}'`;
+   const insertCommentQuery = `INSERT INTO user_comment(comment_text, post_id, comment_date)\
+   VALUES ('${commentText}', '${postId}', ' CURDATE()')`;
+
+   connection.query(insertCommentQuery, function(err, result, fields){
+    if(err) throw err;
+    res.redirect("image_showcase",{
+        data:{
+            commentText: commentText,
+            isUserHomepage:false,
+            isLoggedIn: userLoggedIn(req),
+
+        }
+    });
+   })
+});
 
 
-    }else{
-    //TODO: if the users click comment, it will be taken to the log-in page
 
 
-    }
 
-})
+
+
+
+
 
 
 module.exports = { router };
+
 
 

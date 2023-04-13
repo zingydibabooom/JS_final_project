@@ -2,11 +2,51 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>post create</title>
-    <link rel="stylesheet" href="/css/style.css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Create Posts</title>
+    <link rel="icon" type="image/x-icon" href="" />
+    <!-- Font Awesome icons (free version)-->
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+        crossorigin="anonymous"></script>
+    <link href="css/stylesheet.css" rel="stylesheet" />
+</head>
+
+<body>
+    <!-- Navigation -->
+
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+        <div class="container px-4 px-lg-5">
+            <a class="navbar-brand" href="/">Artisan Alley</a>
+            <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false"
+                aria-label="Toggle navigation">
+                Menu
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="image_showcase">Browse</a></li>
+                </ul>
+            </div>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="authentic_logIn">Log in</a></li>
+                </ul>
+            </div>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="user_homepage">Post your work</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
     <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.js"></script>
     <script>
         $(document).ready(function () {
@@ -15,44 +55,98 @@
             });
         });
     </script>
-</head>
+    </head>
 
-<body>
-    <div class="wrapper">
+    <body>
+        <main>
+            <div class="wrapper1 text-center">
+                <div class="greetUser">
+                    <br>
+                    <% if (data.isUserHomepage==true) { %>
+                        <h2>Welcome Back! <%= data.user_name%>
+                        </h2>
+                        <div class="col-12 text-center">
+                            <br>
+                            <!-- <button class="logOut"> <a href="index"> Log out </a></button>  
+            <button class="createNewPosts"> <a href="create_post"> Create new posts</a></button> -->
+                            <a class="btn btn-warning" href="index"> Log out </a>
+                            <a class="btn btn-info" href="create_post">Create new posts </a>
+                            <!-- //TODO: JS write log out clear session, redirect to / -->
+                            <% }; %>
+                                <!-- <img src="<%=data.imageURL %>"> -->
+                        </div>
+                </div>
+            </div>
 
-        <% if (data.isUserHomepage==true) { %>
-            Hello! <%= data.user_name%>
-                <button class="createNewPosts"> <a href="create_post"> Create new posts</a></button>
-         <% }; %>
-                    <!-- <img src="<%=data.imageURL %>"> -->
-        <br>
-        <% data.result.forEach(function(post){ %>
-            <!-- display each post info -->
-            <!-- //TODO: display the title and the caption -->
-            <%= post.user_name%>
+            <div class="wrapper2 col-12 text-center ">
+                <% data.result.forEach(function(post){ %>
+                    <!-- display each post info -->
+                    <!-- //TODO: display the title and the caption -->
+                    <div class="card text-center" style="width: 80%;">
+                        <img src="<%=post.image_path%>">
+                        <div class="card-body">
+                            <h4 class="card-title text-white">
+                                <%= post.post_title%>
+                            </h4>
+                            <p class="card-text">
+                            <h5>
+                                <%= post.post_text%>
+                            </h5>
+                            <br>
+                            <h6> Artist: <%= post.user_name%>
+                            </h6>
+                            <br>
+                            <%= post.post_date%>
+                                <br>
+                                </p>
+                                <!-- <p class="card-text"><%= post.user_name%></p>
+                  <p class="card-text"><%= post.post_date%></p> -->
+                                <!-- <a href="#" class="btn btn-primary">Go somewhere</a> -->
+                        </div>
+                    </div>
+                    <br>
+                    <!-- <%= post.user_name%>
             <br>
             <%= post.post_title%>
             <br>
             <%= post.post_text%>
             <br>
-            <%= post.post_date%>
-            <img src="<%=post.image_path%>">  
-        <% if(data.isLoggedIn == true){ %>
-            <form action="/show_post" method="post">
-                <div class="form-group">
-                    <label for="CommentTextArea">Write your comments here </label>
-                    <textarea class="form-control" id="CommentTextArea" rows="3"></textarea>
-                  </div>
-            <button class="comments"></button>
-            </form>
-        <% }); %>
+            <%= post.post_date%> -->
+                    <!-- <img src="<%=post.image_path%>">   -->
+                    <% if(data.isLoggedIn==true){ %>
+                        <%= data.commentText %>
+                            <div id="comments" class="col-12 text-center" style="width:50%">
+                                <form action="/addComment" method="post" id="addcomment">
+                                    <div class="form-group">
+                                        <h5><label for="CommentText">Write your comments here </label></h5>
+                                        <textarea class="form-control" id="CommentText" rows="3"></textarea>
+                                    </div>
+                                    <br>
+                    
+                                            <a class="btn btn-info" href="image_showcase"> Comment </a>
+                                            &nbsp&nbsp&nbsp&nbsp
+                                            <input type="hidden" name="postId" value="<%=data.postId %>">
+                                           <a class="btn btn-danger"> <i class="bi bi-heart red">Like this post</i> </a>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
+                                                <path
+                                                    d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z" />
+                                            </svg>
+                                    
+                                   
+                                </form>
+                                <% }; %>
+                                    <br>
+                            </div>
+                            <% }); %>
 
-                            <!-- post history: select from post table where userid = userid 
+                                <!-- post history: select from post table where userid = userid 
             link to create_post -->
-    </div>
+            </div>
 
 
-    </div>
-</body>
+            </div>
+        </main>
+    </body>
 
 </html>
