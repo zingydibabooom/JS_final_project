@@ -75,11 +75,12 @@
               <%if (!locals.data) { %>
                 <form action="/upload" method="post" enctype="multipart/form-data">
                   <input type="file" name="pic" id="pic" />
-                  <button class="btn btn-warning" type="submit">Upload</button>
+                  <button id="upload" class="btn btn-warning" type="submit">Upload</button>
+                  
                 </form>
                 <p class="text-danger">Accepted file types are .jpg, .png, .gif, not exceeding 2MB in file size</p>
                 <% } %>
-                  <form action="/post_complete" method="post" style="margin-left:18rem"></form>
+                  <form action="/post_complete" method="post" >
                   <div class="flex-row" style="margin-left:18rem">
                     <div class="col-md-8 align-items-center">
                       <%if (locals.data) { %>

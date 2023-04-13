@@ -1,4 +1,5 @@
 var mysql = require("mysql2");
+const mysqlPromise = require("mysql2/promise");
 //use the router class in express
 const express = require("express");
 const router = express.Router();
@@ -217,7 +218,13 @@ router.get("/create_post", (req, res) => {
 });
 
 router.post("/upload", async (req, res) => {
+    if (req.files == null) {
+        res.render("create_post", {
+            messages: { error: "Please upload an image." },
+        });
+    }
     const image = req.files.pic;
+
     const user_id = req.session.user_id;
     if (acceptedTypes.indexOf(image.mimetype) >= 0) {
         //where is it going to save the file to
@@ -330,56 +337,77 @@ function insertImageIntoDatabase(imageNewName, user_id) {
             throw err;
         console.log(result);
     });
-    
+
 }
 
 // --------------------------------------get all the db on browser page----------------//
 
-router.get("/image_showcase", (req, res) => {
-        let connection = mysql.createConnection(DB_CONFIG);
-        //get all the user data of this user from db
-        const query = `SELECT P.*, U.user_name, post_id\
+router.get("/image_showcase", async (req, res) => {
+    let connection_promise = mysqlPromise.createConnection(DB_CONFIG);
+    //get all the user data of this user from db
+    const allPostsQuery = `SELECT P.*, U.user_name\
         FROM post as P, user_credential as U\
         WHERE P.user_id = U.user_id`;
-        connection.query(query, function (err, result, fields) {
-            if (err) throw err; 
-            for (let i = 0; i < result.length; i++) {
-                // imageURL = image_directory_str + result[i].image_name;
-                result[i].image_path = image_directory_str + result[i].image_name;
-            }
-            console.log(result);
-            res.render("show_post", {
-                data: {
-                    result: result,
-                    isUserHomepage: false,
-                    isLoggedIn: userLoggedIn(req),
-
-                }
-            });
-        });
+    // otherfields contains irrelevant info from the query execution.
+    let [allPosts, otherFields] = await connection_promise.execute(allPostsQuery);
+    for (let thisPost of allPosts) { // for each post
+        const commentQuery =
+            `SELECT C.*, U.user_name \
+            FROM user_comment as C, user_credential as U \
+            WHERE C.post_id =${thisPost.post_id} AND C.user_id = U.user_id`;
+        // get all comments that responsed to this post
+        let [thisPostsComments, otherFields] = await connection_promise.execute(commentQuery);
+        //append the comments to the result passed on to ejs
+        // create a new attribute withinn the allPosts variable
+        thisPost.comments = thisPostsComments;
+    }
+    // connection.query(getPostsQuery, async function (err, getPostsResult, fields) {
+    //     if (err) throw err;
+    //     for (let i = 0; i < getPostsResult.length; i++) {
+    //         // imageURL = image_directory_str + result[i].image_name;
+    //         getPostsResult[i].image_path = image_directory_str + getPostsResult[i].image_name;
+    //         let postID = getPostsResult[i].post_id;
+    //         const commentQuery = `SELECT * FROM user_comment WHERE post_id ="${postID}"`;
+    //         connection.query(commentQuery, function (err, commentResult) {
+    //             // append the resultant comments to getPostResult[i]
+    //             getPostsResult[i].comments = commentResult;
+    //             console.log(commentResult);
+    //         })
+    //     }
+    console.log(getPostsResult);
+    res.render("show_post", {
+        data: {
+            result: allPosts,
+            isUserHomepage: false,
+            isLoggedIn: userLoggedIn(req),
+        }
+    });
 });
 
 //------------------------comments---------------------------------//
-router.post("/addComment", (req, res)=>{
+router.post("/addComment", (req, res) => {
     let connection = mysql.createConnection(DB_CONFIG);
     const postId = req.body.postId;
+    const commentUser = req.session.user_id;
     const commentText = req.body.commentText;
+    const insertCommentQuery = `INSERT INTO user_comment(comment_text, post_id, comment_date)\
+        VALUES ('${commentText}', '${postId}', ' CURDATE()')`;
 
-    const likeQuery =`SELECT COUNT(*) AS n_likes FROM user_like WHERE post_id = '${postId}'`;
-   const insertCommentQuery = `INSERT INTO user_comment(comment_text, post_id, comment_date)\
-   VALUES ('${commentText}', '${postId}', ' CURDATE()')`;
 
-   connection.query(insertCommentQuery, function(err, result, fields){
-    if(err) throw err;
-    res.redirect("image_showcase",{
-        data:{
-            commentText: commentText,
-            isUserHomepage:false,
-            isLoggedIn: userLoggedIn(req),
+    // const likeQuery = `SELECT COUNT(*) AS n_likes FROM user_like WHERE post_id = '${postId}'`;
 
-        }
-    });
-   })
+
+    connection.query(insertCommentQuery, function (err, result, fields) {
+        if (err) throw err;
+        res.redirect("image_showcase", {
+            data: {
+                commentText: commentText,
+                isUserHomepage: false,
+                isLoggedIn: userLoggedIn(req),
+
+            }
+        });
+    })
 });
 
 
