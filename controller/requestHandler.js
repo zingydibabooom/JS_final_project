@@ -163,15 +163,15 @@ router.get("/user_homepage", (req, res) => {
                 // imageURL = image_directory_str + result[i].image_name;
                 result[i].image_path = image_directory_str + result[i].image_name;
             }
-            console.log(result);
-
+            // console.log(result);
+            
             res.render("show_post", {
                 data: {
                     user_name: user_name,
                     result: result,
                     isUserHomepage: true,
                     isLoggedIn: userLoggedIn(req),
-                }
+                },
             })
         });
 
@@ -343,7 +343,7 @@ function insertImageIntoDatabase(imageNewName, user_id) {
 // --------------------------------------get all the db on browser page----------------//
 
 router.get("/image_showcase", async (req, res) => {
-    let connection_promise = mysqlPromise.createConnection(DB_CONFIG);
+    let connection_promise = await mysqlPromise.createConnection(DB_CONFIG);
     //get all the user data of this user from db
     const allPostsQuery = `SELECT P.*, U.user_name\
         FROM post as P, user_credential as U\
@@ -360,6 +360,7 @@ router.get("/image_showcase", async (req, res) => {
         //append the comments to the result passed on to ejs
         // create a new attribute withinn the allPosts variable
         thisPost.comments = thisPostsComments;
+        thisPost.image_path = image_directory_str+ thisPost.image_name;
     }
     // connection.query(getPostsQuery, async function (err, getPostsResult, fields) {
     //     if (err) throw err;
@@ -372,9 +373,9 @@ router.get("/image_showcase", async (req, res) => {
     //             // append the resultant comments to getPostResult[i]
     //             getPostsResult[i].comments = commentResult;
     //             console.log(commentResult);
-    //         })
+    //         }) //return straight away without value
     //     }
-    console.log(getPostsResult);
+    // console.log(allPosts);
     res.render("show_post", {
         data: {
             result: allPosts,
@@ -390,23 +391,17 @@ router.post("/addComment", (req, res) => {
     const postId = req.body.postId;
     const commentUser = req.session.user_id;
     const commentText = req.body.commentText;
-    const insertCommentQuery = `INSERT INTO user_comment(comment_text, post_id, comment_date)\
-        VALUES ('${commentText}', '${postId}', ' CURDATE()')`;
-
-
+    const insertCommentQuery = `INSERT INTO user_comment(comment_text, post_id, comment_date)
+        VALUES (?,?,  CURDATE())`;
+   
+    console.log("runingn add comment");
     // const likeQuery = `SELECT COUNT(*) AS n_likes FROM user_like WHERE post_id = '${postId}'`;
 
 
-    connection.query(insertCommentQuery, function (err, result, fields) {
+    connection.query(insertCommentQuery, [commentText, postId], function (err, result, fields) {
         if (err) throw err;
-        res.redirect("image_showcase", {
-            data: {
-                commentText: commentText,
-                isUserHomepage: false,
-                isLoggedIn: userLoggedIn(req),
-
-            }
-        });
+        console.log(result);
+        res.redirect("/image_showcase");
     })
 });
 

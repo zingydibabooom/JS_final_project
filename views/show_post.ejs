@@ -62,7 +62,7 @@
             <div class="wrapper1 text-center">
                 <div class="greetUser">
                     <br>
-                    <% if (data.isUserHomepage==true) { %>
+                    <% if (data.isUserHomepage==true){ %>
                         <h2>Welcome Back! <%= data.user_name%>
                         </h2>
                         <div class="col-12 text-center">
@@ -79,7 +79,7 @@
             </div>
 
             <div class="wrapper2 col-12 text-center ">
-                <% data.result.forEach(post){ %>
+                <% data.result.forEach(function(post){ %>
                     <!-- display each post info -->
                     <!-- //TODO: display the title and the caption -->
                     <div class="card text-center" style="width: 80%;">
@@ -105,10 +105,13 @@
                         </div>
                         <!-- the commennt here is just like in requestHandler.js result[i].image_path -->
                         <!-- the "comment" here is a row-->
-                        <% post.comments.forEach(comment){ %>
-                            <%= comment.user_name %>
-                            <%= comment.comment_text %>
-                        <%};%> 
+                        <% if(post.comments!=null){ %>
+                            <% post.comments.forEach(function(comment){ %>
+                                <%= comment.user_name %>
+                                    <%= comment.comment_text %>
+                            <%});%>
+                        <%}%>
+
                     </div>
                     <br>
 
@@ -117,12 +120,13 @@
                             <div id="comments" class="col-12 text-center" style="width:50%">
                                 <form action="/addComment" method="post" id="addcomment">
                                     <div class="form-group">
-                                        <h5><label for="CommentText">Write your comments here </label></h5>
-                                        <textarea class="form-control" id="CommentText" rows="3"></textarea>
+                                        <h5><label for="commentText">Write your comments here </label></h5>
+                                        <textarea class="form-control" name="commentText" rows="3"></textarea>
                                     </div>
                                     <br>
 
-                                    <a class="btn btn-info" href="image_showcase"> Comment </a>
+                                    <!-- <a class="btn btn-info" href="image_showcase"> Comment </a> -->
+                                    <button id="comment" type="submit" class="btn btn-info">Comment</button>
                                     &nbsp&nbsp&nbsp&nbsp
                                     <input type="hidden" name="postId" value="<%=post.post_id %>">
                                     <a class="btn btn-danger"> <i class="bi bi-heart red">Like this post</i> </a>
@@ -131,13 +135,11 @@
                                         <path
                                             d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z" />
                                     </svg>
-
-
                                 </form>
-                    <% }; %>
+                                <% }; %>
                                     <br>
                             </div>
-                 <% }; %>
+                            <% }); %>
 
                                 <!-- post history: select from post table where userid = userid 
             link to create_post -->
