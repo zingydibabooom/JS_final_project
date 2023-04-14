@@ -366,3 +366,11 @@ body {
 #post{
   width:50% !important;
 }
+
+.showComments{
+   background-color:#dfb9bc;
+   width:70%;
+   margin-left:15%;
+   border-radius:5rem;
+   text-align: center;
+}

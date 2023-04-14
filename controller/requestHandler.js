@@ -79,9 +79,9 @@ router.post("/authentic_logIn", async (req, res) => {
         });
         const targetUserName = req.body.login_username;
         const targetPassword = req.body.password;
-        const query = `SELECT user_id, user_name FROM user_credential WHERE\
-         user_name = '${targetUserName}' AND user_password = '${targetPassword}' ;`;
-        connection.query(query, function (err, result, fields) {
+        const query = `SELECT user_id, user_name FROM user_credential WHERE
+         user_name = ? AND user_password =? ;`;
+        connection.query(query, [targetUserName, targetPassword],function (err, result, fields) {
             if (err) throw err;
             else if (result.length === 0) { // not logged in
 
@@ -99,6 +99,7 @@ router.post("/authentic_logIn", async (req, res) => {
             }
         })
     })
+    connection.end();
 });
 
 
@@ -114,13 +115,10 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
     let password = req.body.password;
     let email = req.body.email;
     //if there is no error, open query:
-    const query = `INSERT INTO user_credential(\
-        user_name, user_password, user_email\
-    ) VALUES (\
-        '${username}', '${password}', '${email}'\
-    );`
+    const query = `INSERT INTO user_credential(
+        user_name, user_password, user_email) VALUES (?, ?, ?);`
     let connection = mysql.createConnection(DB_CONFIG);
-    connection.query(query, function (err, result, fields) {
+    connection.query(query, [username, password, email], function (err, result, fields) {
         if (err) throw err; //if throw err here the website will stop running 
         console.log(result);
 
@@ -142,7 +140,6 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
     connection.end();
 });
 
-//----------------------------------------------Log out ---------------------------------------//
 
 
 //--------------------------------------------------------post your work-----------------------------------------//
@@ -152,10 +149,9 @@ router.get("/user_homepage", (req, res) => {
         var user_name = req.session.user_name;
         let connection = mysql.createConnection(DB_CONFIG);
         //get all the user data of this user from db
-        const query = `SELECT * from post\
-            WHERE user_id = '${user_id}'`;
+        const query = `SELECT * from post WHERE user_id = ?`;
         // const commentsQuery = "SELECT"
-        connection.query(query, function (err, result, fields) {
+        connection.query(query, [user_id],function (err, result, fields) {
             if (err) throw err; //if throw err here the website will stop running
             // result is an array of key-value objects
             // add the image directory prefix to each image name before sendingn to ejs
@@ -164,7 +160,6 @@ router.get("/user_homepage", (req, res) => {
                 result[i].image_path = image_directory_str + result[i].image_name;
             }
             // console.log(result);
-            
             res.render("show_post", {
                 data: {
                     user_name: user_name,
@@ -174,14 +169,21 @@ router.get("/user_homepage", (req, res) => {
                 },
             })
         });
-
-
     } else { // if not logged in
         res.render("log_in", { messages: { error: null } });
     }
+    connection.end();
 });
 
-//----image upload---//
+//---------------------log out-------//
+
+router.get('/logOut', function (req, res) {
+    req.session.destroy();
+    console.log("logged out");
+    res.redirect("/");
+    })
+
+//-----------image upload-----------//
 
 const flash = require("express-flash");
 const fileUpload = require("express-fileupload");
@@ -224,7 +226,6 @@ router.post("/upload", async (req, res) => {
         });
     }
     const image = req.files.pic;
-
     const user_id = req.session.user_id;
     if (acceptedTypes.indexOf(image.mimetype) >= 0) {
         //where is it going to save the file to
@@ -277,10 +278,10 @@ router.post("/post_complete", (req, res) => {
     // get image_name from the hidden element in ejs form.
     let image_name = req.body.image_name;
     // upddate the post_title and post_text column in the database that has the correspondinng imagename in the entry
-    const query = `UPDATE post \
-       SET post_title = '${post_title}', post_text ='${caption}', post_date = CURDATE()\
-       WHERE image_name = '${image_name}'`;
-    connection.query(query, function (err, result, fields) {
+    const query = `UPDATE post
+        SET post_title = ?, post_text =?, post_date = CURDATE()
+        WHERE image_name = ?`;
+    connection.query(query, [post_title, caption, image_name],function (err, result, fields) {
         if (err) throw err;
         console.log(result);
     });
@@ -328,11 +329,9 @@ function insertImageIntoDatabase(imageNewName, user_id) {
             console.log("successful connection");
     });
     //if there is no error, open query, insert to table
-    const query = `INSERT INTO post (image_name, user_id)\
-    VALUES (\
-        '${imageNewName}','${user_id}');`;
+    const query = `INSERT INTO post (image_name, user_id) VALUES (?,?);`;
 
-    connection.query(query, function (err, result, fields) {
+    connection.query(query,[imageNewName, user_id], function (err, result, fields) {
         if (err)
             throw err;
         console.log(result);
@@ -361,21 +360,8 @@ router.get("/image_showcase", async (req, res) => {
         // create a new attribute withinn the allPosts variable
         thisPost.comments = thisPostsComments;
         thisPost.image_path = image_directory_str+ thisPost.image_name;
+        console.log(thisPost.comments);
     }
-    // connection.query(getPostsQuery, async function (err, getPostsResult, fields) {
-    //     if (err) throw err;
-    //     for (let i = 0; i < getPostsResult.length; i++) {
-    //         // imageURL = image_directory_str + result[i].image_name;
-    //         getPostsResult[i].image_path = image_directory_str + getPostsResult[i].image_name;
-    //         let postID = getPostsResult[i].post_id;
-    //         const commentQuery = `SELECT * FROM user_comment WHERE post_id ="${postID}"`;
-    //         connection.query(commentQuery, function (err, commentResult) {
-    //             // append the resultant comments to getPostResult[i]
-    //             getPostsResult[i].comments = commentResult;
-    //             console.log(commentResult);
-    //         }) //return straight away without value
-    //     }
-    // console.log(allPosts);
     res.render("show_post", {
         data: {
             result: allPosts,
@@ -391,24 +377,21 @@ router.post("/addComment", (req, res) => {
     const postId = req.body.postId;
     const commentUser = req.session.user_id;
     const commentText = req.body.commentText;
-    const insertCommentQuery = `INSERT INTO user_comment(comment_text, post_id, comment_date)
-        VALUES (?,?,  CURDATE())`;
+    const insertCommentQuery = `INSERT INTO user_comment(user_id, comment_text, post_id, comment_date)
+        VALUES (?,?,?,  CURDATE())`;
    
     console.log("runingn add comment");
     // const likeQuery = `SELECT COUNT(*) AS n_likes FROM user_like WHERE post_id = '${postId}'`;
 
 
-    connection.query(insertCommentQuery, [commentText, postId], function (err, result, fields) {
+    connection.query(insertCommentQuery, [commentUser, commentText, postId], function (err, result, fields) {
         if (err) throw err;
         console.log(result);
         res.redirect("/image_showcase");
     })
 });
 
-
-
-
-
+//--------------likes-----------//
 
 
 

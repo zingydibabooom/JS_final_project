@@ -63,17 +63,16 @@
                 <div class="greetUser">
                     <br>
                     <% if (data.isUserHomepage==true){ %>
-                        <h2>Welcome Back! <%= data.user_name%>
+                        <h2>Welcome Back! <%= data.user_name %>
                         </h2>
                         <div class="col-12 text-center">
                             <br>
-                            <!-- <button class="logOut"> <a href="index"> Log out </a></button>  
-            <button class="createNewPosts"> <a href="create_post"> Create new posts</a></button> -->
-                            <a class="btn btn-warning" href="index"> Log out </a>
+                            <a class="btn btn-warning" href="logOut"> Log out </a>
+                            &nbsp&nbsp&nbsp&nbsp  
                             <a class="btn btn-info" href="create_post">Create new posts </a>
                             <!-- //TODO: JS write log out clear session, redirect to / -->
                             <% }; %>
-                                <!-- <img src="<%=data.imageURL %>"> -->
+                                <!-- <img src="<%= data.imageURL %>"> -->
                         </div>
                 </div>
             </div>
@@ -83,52 +82,56 @@
                     <!-- display each post info -->
                     <!-- //TODO: display the title and the caption -->
                     <div class="card text-center" style="width: 80%;">
-                        <img src="<%=post.image_path%>">
+                        <img src="<%= post.image_path %>">
                         <div class="card-body">
                             <h4 class="card-title text-white">
-                                <%= post.post_title%>
+                                <%= post.post_title %>
                             </h4>
                             <p class="card-text">
                             <h5>
-                                <%= post.post_text%>
+                                <%= post.post_text %>
                             </h5>
                             <br>
-                            <h6> Artist: <%= post.user_name%>
+                            <h6> Artist: <%= post.user_name %>
                             </h6>
                             <br>
-                            <%= post.post_date%>
+                            <%= post.post_date %>
                                 <br>
                                 </p>
-                                <!-- <p class="card-text"><%= post.user_name%></p>
-                  <p class="card-text"><%= post.post_date%></p> -->
+                                <!-- <p class="card-text"><%= post.user_name %></p>
+                  <p class="card-text"><%= post.post_date %></p> -->
                                 <!-- <a href="#" class="btn btn-primary">Go somewhere</a> -->
                         </div>
                         <!-- the commennt here is just like in requestHandler.js result[i].image_path -->
                         <!-- the "comment" here is a row-->
-                        <% if(post.comments!=null){ %>
-                            <% post.comments.forEach(function(comment){ %>
-                                <%= comment.user_name %>
-                                    <%= comment.comment_text %>
-                            <%});%>
-                        <%}%>
+
 
                     </div>
                     <br>
-
+                    <div class="showComments">
+                        <% if(post.comments !=null){ %>
+                            <% post.comments.forEach(function(comment){ %>
+                                <br>
+                                <h6> 
+                                <%= comment.user_name %>: <%= comment.comment_text %>
+                                </h6>
+                                <% }); %>
+                                    <% }; %>
+                                        <br>
+                    </div>
                     <% if(data.isLoggedIn==true){ %>
                         <%= data.commentText %>
                             <div id="comments" class="col-12 text-center" style="width:50%">
                                 <form action="/addComment" method="post" id="addcomment">
                                     <div class="form-group">
                                         <h5><label for="commentText">Write your comments here </label></h5>
-                                        <textarea class="form-control" name="commentText" rows="3"></textarea>
+                                        <textarea class="form-control" name="commentText" rows="2"></textarea>
                                     </div>
                                     <br>
-
                                     <!-- <a class="btn btn-info" href="image_showcase"> Comment </a> -->
                                     <button id="comment" type="submit" class="btn btn-info">Comment</button>
                                     &nbsp&nbsp&nbsp&nbsp
-                                    <input type="hidden" name="postId" value="<%=post.post_id %>">
+                                    <input type="hidden" name="postId" value="<%= post.post_id %>">
                                     <a class="btn btn-danger"> <i class="bi bi-heart red">Like this post</i> </a>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                         class="bi bi-heart" viewBox="0 0 16 16">
@@ -141,8 +144,8 @@
                             </div>
                             <% }); %>
 
-                                <!-- post history: select from post table where userid = userid 
-            link to create_post -->
+                                <!-- post history: select from post table where userid = userid
+link to create_post -->
             </div>
 
 
