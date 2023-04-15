@@ -105,22 +105,30 @@
                         <!-- the commennt here is just like in requestHandler.js result[i].image_path -->
                         <!-- the "comment" here is a row-->
 
-
                     </div>
                     <br>
-                    <div class="showComments">
+
                         <% if(post.comments !=null){ %>
+                            <div class="showComments">
                             <% post.comments.forEach(function(comment){ %>
                                 <br>
                                 <h6>
                                     <%= comment.user_name %>: <%= comment.comment_text %>
                                 </h6>
-                                <% }); %>
-                                    <% }; %>
-                                        <br>
+                            
+                                <% if(data.isLoggedIn==true){ %>
+                                    <form action="/addLike" method="post" id="addLike">
+                                        <input type="hidden" name="commentId" value="<%= post.comment_id%>">
+                                        <button id="like" type="submit" class="btn btn-danger"><%=post.likesNum%>
+                                            Like</button>
+                                    </form>
+                                <%};%>
+                            <% }); %>
+                        </div>
+                        <% }; %>
+                    <br>
                     </div>
-                    <% if(data.isLoggedIn==true){ %>
-                        <%= data.commentText %>
+                         <% if(data.isLoggedIn==true){ %>
                             <div id="comments" class="col-12 text-center" style="width:50%">
                                 <form action="/addComment" method="post" id="addcomment">
                                     <div class="form-group">
@@ -128,28 +136,29 @@
                                         <textarea class="form-control" name="commentText" rows="2"></textarea>
                                     </div>
                                     <br>
-                                    <!-- <a class="btn btn-info" href="image_showcase"> Comment </a> -->
                                     <button id="comment" type="submit" class="btn btn-info">Comment</button>
                                     <input type="hidden" name="postId" value="<%= post.post_id %>">
                                 </form>
                                 <br>
-                                <form actionn="/addLike" method="post" id="addLike">
-                                    <button id="like" type="submit" class="btn btn-danger"><i
-                                            class="bi bi-heart red">Like this post</i> </a></button>
-                                    <input type="hidden" name="postId" value="<%= post.post_id %>">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-heart" viewBox="0 0 16 16">
-                                        <path
-                                            d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z" />
-                                    </svg>
+                                <form action="/addLike" method="post" id="addLike">
+                                    <div class="likeClickArea">
+                                        <button id="like" type="submit" class="btn btn-danger"><i
+                                                class="bi bi-heart red">Like this post</i> </a></button>
+                                        <input type="hidden" name="postId" value="<%= post.post_id %>">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
+                                            <path
+                                                d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z" />
+                                        </svg>
+                                        <%=post.likesNum%>
+                                    </div>
+
                                     <% }; %>
-                                      
+
                                 </form>
                             </div>
                             <br>
                             <% }); %>
-            </div>
-
 
             </div>
         </main>
