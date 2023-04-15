@@ -99,7 +99,7 @@ router.post("/authentic_logIn", async (req, res) => {
             }
         })
     })
-    connection.end();
+    // connection.end();
 });
 
 
@@ -137,7 +137,7 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
             }
         }
     }
-    connection.end();
+    // connection.end();
 });
 
 
@@ -172,7 +172,7 @@ router.get("/user_homepage", (req, res) => {
     } else { // if not logged in
         res.render("log_in", { messages: { error: null } });
     }
-    connection.end();
+    // connection.end();
 });
 
 //---------------------log out-------//
@@ -286,7 +286,7 @@ router.post("/post_complete", (req, res) => {
         console.log(result);
     });
 
-    connection.end();
+    // connection.end();
 });
 
 async function receiveAndResizeImage(image, imageUploaded, editedFile, res, imageNewName) {
@@ -340,19 +340,18 @@ function insertImageIntoDatabase(imageNewName, user_id) {
 }
 
 // --------------------------------------get all the db on browser page----------------//
-
 router.get("/image_showcase", async (req, res) => {
     let connection_promise = await mysqlPromise.createConnection(DB_CONFIG);
     //get all the user data of this user from db
-    const allPostsQuery = `SELECT P.*, U.user_name\
-        FROM post as P, user_credential as U\
+    const allPostsQuery = `SELECT P.*, U.user_name
+        FROM post as P, user_credential as U
         WHERE P.user_id = U.user_id`;
     // otherfields contains irrelevant info from the query execution.
     let [allPosts, otherFields] = await connection_promise.execute(allPostsQuery);
     for (let thisPost of allPosts) { // for each post
-        const commentQuery =
-            `SELECT C.*, U.user_name \
-            FROM user_comment as C, user_credential as U \
+        const commentQuery = 
+            `SELECT C.*, U.user_name
+            FROM user_comment as C, user_credential as U 
             WHERE C.post_id =${thisPost.post_id} AND C.user_id = U.user_id`;
         // get all comments that responsed to this post
         let [thisPostsComments, otherFields] = await connection_promise.execute(commentQuery);
@@ -361,6 +360,14 @@ router.get("/image_showcase", async (req, res) => {
         thisPost.comments = thisPostsComments;
         thisPost.image_path = image_directory_str+ thisPost.image_name;
         console.log(thisPost.comments);
+
+        //same way, show likes
+        const likeQuery =
+        `SELECT L.*, U.user_name
+        FROM user_like as L, user_credential as U
+        WHERE L.post_id = ${thisPost.post_id} AND L.user_id = U.user_id`;
+        let[thisPostsLikes, otherField] = await connection_promise.execute(likeQuery);
+        thisPost.likes = thisPostsLikes;
     }
     res.render("show_post", {
         data: {
@@ -379,23 +386,28 @@ router.post("/addComment", (req, res) => {
     const commentText = req.body.commentText;
     const insertCommentQuery = `INSERT INTO user_comment(user_id, comment_text, post_id, comment_date)
         VALUES (?,?,?,  CURDATE())`;
-   
-    console.log("runingn add comment");
-    // const likeQuery = `SELECT COUNT(*) AS n_likes FROM user_like WHERE post_id = '${postId}'`;
-
-
+      console.log("runingn add comment");
     connection.query(insertCommentQuery, [commentUser, commentText, postId], function (err, result, fields) {
         if (err) throw err;
         console.log(result);
         res.redirect("/image_showcase");
     })
+
 });
 
 //--------------likes-----------//
-
-
-
-
+router.post("/addLike", async (req, res)=>{
+    let connection = mysql.createConnection(DB_CONFIG);
+    const likeUser = req.session.user_id;
+    const toPost = req.body.postId;
+    const insertLikeQuery = `INSERT INTO user_like(user_id, post_id)
+        VALUES (?,?)`;
+    connection.query(insertLikeQuery, [likeUser, toPost], function (err, result, fields) {
+        if (err) throw err;
+        console.log(result);
+        res.redirect("/image_showcase");
+    })
+});
 
 
 module.exports = { router };
