@@ -120,7 +120,6 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
     let connection = mysql.createConnection(DB_CONFIG);
     connection.query(query, [username, password, email], function (err, result, fields) {
         if (err) throw err; //if throw err here the website will stop running 
-        console.log(result);
 
     });
 
@@ -283,7 +282,6 @@ router.post("/post_complete", (req, res) => {
         WHERE image_name = ?`;
     connection.query(query, [post_title, caption, image_name], function (err, result, fields) {
         if (err) throw err;
-        console.log(result);
     });
 
     // connection.end();
@@ -334,7 +332,6 @@ function insertImageIntoDatabase(imageNewName, user_id) {
     connection.query(query, [imageNewName, user_id], function (err, result, fields) {
         if (err)
             throw err;
-        console.log(result);
     });
 
 }
@@ -349,18 +346,30 @@ router.get("/image_showcase", async (req, res) => {
     // otherfields contains irrelevant info from the query execution.
     let [allPosts, otherFields] = await connection_promise.execute(allPostsQuery);
     for (let thisPost of allPosts) { // for each post
-        const commentQuery =
+         const commentQuery =
             `SELECT C.*, U.user_name
             FROM user_comment as C, user_credential as U 
             WHERE C.post_id =${thisPost.post_id} AND C.user_id = U.user_id`;
         // get all comments that responsed to this post
-        let [thisPostsComments, otherFields] = await connection_promise.execute(commentQuery);
-        //append the comments to the result passed on to ejs
+         let [thisPostsComments, otherFields] = await connection_promise.execute(commentQuery);
+         
+        //show comment likes
+        for (let thisComment of thisPostsComments){
+            const likeToCommentsQuery =
+              `SELECT COUNT(*) as count
+               FROM user_like
+               WHERE comment_id = ${thisComment.comment_id};`
+            let[thisCommentLikes, commentLikeOtherFields] = 
+            await connection_promise.execute(likeToCommentsQuery);
+            thisComment.allLikes = thisCommentLikes[0].count;
+            console.log(thisComment.allLikes);
+        }
+           
+         //append the comments to the result passed on to ejs
         // create a new attribute withinn the allPosts variable
-        thisPost.comments = thisPostsComments;
-        thisPost.image_path = image_directory_str + thisPost.image_name;
+            thisPost.comments = thisPostsComments;
 
-        //same way, show likes
+        //show  post likes
         const likeQuery =
             `SELECT L.*, U.user_name
             FROM user_like as L, user_credential as U
@@ -368,7 +377,11 @@ router.get("/image_showcase", async (req, res) => {
         let [thisPostsLikes, otherField] = await connection_promise.execute(likeQuery);
         thisPost.likes = thisPostsLikes;
         thisPost.likesNum = thisPost.likes.length;
-        console.log(thisPost);
+        // console.log(thisPost);
+
+        //show all images
+        thisPost.image_path = image_directory_str + thisPost.image_name;
+
     }
         
 
@@ -390,10 +403,8 @@ router.post("/addComment", (req, res) => {
     const commentText = req.body.commentText;
     const insertCommentQuery = `INSERT INTO user_comment(user_id, comment_text, post_id, comment_date)
         VALUES (?,?,?,  CURDATE())`;
-    console.log("runingn add comment");
     connection.query(insertCommentQuery, [commentUser, commentText, postId], function (err, result, fields) {
         if (err) throw err;
-        console.log(result);
         res.redirect("/image_showcase");
     })
 

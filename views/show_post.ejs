@@ -74,12 +74,9 @@
                         </div>
                 </div>
             </div>
-            <br>
-            <br>
+
             <div class="wrapper2 col-12 text-center ">
                 <% data.result.forEach(function(post){ %>
-                    <!-- display each post info -->
-                    <!-- //TODO: display the title and the caption -->
                     <div class="card text-center" style="width: 80%;">
                         <img src="<%= post.image_path %>">
                         <div class="card-body">
@@ -117,11 +114,12 @@
                             
                                 <% if(data.isLoggedIn==true){ %>
                                     <form action="/addLike" method="post" id="addLike">
-                                        <input type="hidden" name="commentId" value="<%= post.comment_id%>">
-                                        <button id="like" type="submit" class="btn btn-danger"><%=post.likesNum%>
+                                        <input type="hidden" name="commentId" value="<%=comment.comment_id%>">
+                                        <button id="like" type="submit" class="btn btn-danger">
                                             Like</button>
                                     </form>
                                 <%};%>
+                                <%=comment.allLikes%> likes
                             <% }); %>
                         </div>
                         <% }; %>
