@@ -6,6 +6,7 @@ const router = express.Router();
 const bodyParser = require("body-parser");
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
 const { validationRule, validationResult } = require("./validationrules");
+const passport = require("passport");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -21,7 +22,7 @@ const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
 const sessionStore = new MySQLStore(DB_CONFIG);
 
-
+router.use(flash());
 router.use(session({
     key: 'session_cookie_name',
     secret: 'session_cookie_secret',
@@ -29,6 +30,9 @@ router.use(session({
     resave: false,
     saveUninitialized: false
 }));
+router.use(passport.initialize());
+router.use(passport.session());
+
 
 // the prefix to an image's path (before image name)
 const image_directory_str = "uploads/resized/";
@@ -43,8 +47,8 @@ sessionStore.onReady().then(() => {
 });
 
 
-//todo-1 lets router use this for all paths - parse / understand user http requests.
-//todo: can remove erlencodedParser from individual paths now
+// lets router use this for all paths - parse / understand user http requests.
+//can remove erlencodedParser from individual paths now
 router.use(urlencodedParser);
 
 
@@ -83,7 +87,7 @@ router.post("/authentic_logIn", async (req, res) => {
          user_name = ? AND user_password =? ;`;
         connection.query(query, [targetUserName, targetPassword], function (err, result, fields) {
             if (err) throw err;
-            else if (result.length === 0) { // not logged in
+            if (result.length === 0) { // not logged in
 
                 //TODO: prompt wrong username or password
 
@@ -99,47 +103,50 @@ router.post("/authentic_logIn", async (req, res) => {
             }
         })
     })
-    // connection.end();
+    connection.end();
 });
-
-
 
 //-----------------------------------------------------for Log in & Register ----------------------------------//
 router.get("/registration", (req, res) => {
     return res.render("registration");
 })
-
 router.post("/addUserCredentials", validationRule, (req, res) => {
 
     let username = req.body.username;
     let password = req.body.password;
     let email = req.body.email;
-    //if there is no error, open query:
-    const query = `INSERT INTO user_credential(
-        user_name, user_password, user_email) VALUES (?, ?, ?);`
-    let connection = mysql.createConnection(DB_CONFIG);
-    connection.query(query, [username, password, email], function (err, result, fields) {
-        if (err) throw err; //if throw err here the website will stop running 
-
-    });
 
     //Error messages
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        let markup = ``;
         const errorArray = errors.array();
-
         for (let i = 0; i < errorArray.length; i++) {
             console.log(errorArray[i]);
             const currentError = errorArray[i].param;
+            console.log(currentError);
             if (currentError == 'email') {
-                console.log("Please insert proper email address.")
+                markup = `<div class="alert alert-danger" role="alert"> Please enter a valid email. </div>`
+                form.insertAdjacentHTML('beforebegin', markup);
+                // } else if (currentError == 'username') {
+                //     alert("Please enter username.")
+                // } else if (currentError == 'password') {
+                //     alert(
+                //         "The password must be: min 8 characters, one lower case,\
+                // one uppercase, one special character.")
+                // }
             }
-        }
-    }
-    // connection.end();
+            //if there is no error, open query:
+            const query = `INSERT INTO user_credential(
+             user_name, user_password, user_email) VALUES (?, ?, ?);`
+            let connection = mysql.createConnection(DB_CONFIG);
+            connection.query(query, [username, password, email], function (err, result, fields) {
+                if (err) throw err; //if throw err here the website will stop running 
+            });
+        };
+        //      connection.end();
+    };
 });
-
-
 
 //--------------------------------------------------------post your work-----------------------------------------//
 router.get("/user_homepage", (req, res) => {
@@ -171,7 +178,7 @@ router.get("/user_homepage", (req, res) => {
     } else { // if not logged in
         res.render("log_in", { messages: { error: null } });
     }
-    // connection.end();
+    connection.end();
 });
 
 //---------------------log out-------//
@@ -346,28 +353,28 @@ router.get("/image_showcase", async (req, res) => {
     // otherfields contains irrelevant info from the query execution.
     let [allPosts, otherFields] = await connection_promise.execute(allPostsQuery);
     for (let thisPost of allPosts) { // for each post
-         const commentQuery =
+        const commentQuery =
             `SELECT C.*, U.user_name
             FROM user_comment as C, user_credential as U 
             WHERE C.post_id =${thisPost.post_id} AND C.user_id = U.user_id`;
         // get all comments that responsed to this post
-         let [thisPostsComments, otherFields] = await connection_promise.execute(commentQuery);
-         
+        let [thisPostsComments, otherFields] = await connection_promise.execute(commentQuery);
+
         //show comment likes
-        for (let thisComment of thisPostsComments){
+        for (let thisComment of thisPostsComments) {
             const likeToCommentsQuery =
-              `SELECT COUNT(*) as count
+                `SELECT COUNT(*) as count
                FROM user_like
                WHERE comment_id = ${thisComment.comment_id};`
-            let[thisCommentLikes, commentLikeOtherFields] = 
-            await connection_promise.execute(likeToCommentsQuery);
+            let [thisCommentLikes, commentLikeOtherFields] =
+                await connection_promise.execute(likeToCommentsQuery);
             thisComment.allLikes = thisCommentLikes[0].count;
             console.log(thisComment.allLikes);
         }
-           
-         //append the comments to the result passed on to ejs
+
+        //append the comments to the result passed on to ejs
         // create a new attribute withinn the allPosts variable
-            thisPost.comments = thisPostsComments;
+        thisPost.comments = thisPostsComments;
 
         //show  post likes
         const likeQuery =
@@ -383,7 +390,7 @@ router.get("/image_showcase", async (req, res) => {
         thisPost.image_path = image_directory_str + thisPost.image_name;
 
     }
-        
+
 
     res.render("show_post", {
         data: {
@@ -424,7 +431,7 @@ router.post("/addLike", (req, res) => {
                 res.redirect("/image_showcase");
             }
         });
-    }else if(toComment != null){
+    } else if (toComment != null) {
         const insertLiketoCommentQuery = `INSERT IGNORE INTO user_like(user_id, comment_id)
         VALUES(?,?)`;
         connection.query(insertLiketoCommentQuery, [likeUser, toComment], (dbErr, dbResult) => {
@@ -432,7 +439,7 @@ router.post("/addLike", (req, res) => {
             if (dbErr == null) {
                 res.redirect("/image_showcase");
             }
-        });   
+        });
     }
 
 });
