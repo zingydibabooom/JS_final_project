@@ -110,6 +110,7 @@ router.post("/addUserCredentials", validationRule, async (req, res) => {
 
     //Error messages
     const errors = validationResult(req);
+    //if there is error
     if (!errors.isEmpty()) {
         const errorArray = errors.array();
         let currentErrors = [];
@@ -128,66 +129,35 @@ router.post("/addUserCredentials", validationRule, async (req, res) => {
                 currentErrors: currentErrors,
             });
         }
-    } else {
+    } else {  //if there is no error, check the if the username or(and) email is unique
+        let connection = await mysqlPromise.createConnection(DB_CONFIG);
         try {
-            let connection = await mysqlPromise.createConnection(DB_CONFIG);
             await connection.execute("INSERT `user_credential`(\
-                `user_name`, `user_password`, `user_email`) VALUES (?,?)", [username, password, email]);
-        } catch (e) {
+                `user_name`, `user_password`, `user_email`) VALUES (?,?,?)", [username, password, email]);
+        } catch (e) {  //if not, throw error
+            console.log(e);
             let duplicateErrors = "Username or email address already exists.";
             res.render("registration", {
                 showMsg: duplicateErrors,
             });
-        };
-    }
-
-});
-// let connection_promise = await mysqlPromise.createConnection(DB_CONFIG);
-// const insertUserquery = `INSERT INTO user_credential(
-//      user_name, user_password, user_email) VALUES ("${username}", "${password}", "${email}");`
-// let[userInfo, newUserotherFields, error] = await connection_promise.execute(insertUserquery);
-// if (error) {
-//     let duplicateErrors = "Username or email address already exists."
-//     res.render("registration",{
-//         showMsg: duplicateErrors,  
-//     });
-// }         
-const findNewUserId = `SELECT user_id, user_name 
+        }
+        //if there are no errors, 
+        finally {
+            const findNewUserId = `SELECT user_id, user_name 
             FROM user_credential WHERE
              user_name = "${username}";`
-let [thisUserId, userIdOtherFields] = await connection_promise.execute(findNewUserId);
-req.session.user_id = thisUserId[0].user_id;
-req.session.user_name = username;
-req.session.save(function (err) {
-    if (err) return err;
-    res.redirect("/user_homepage");
+            let [thisUserId, userIdOtherFields] = await connection.execute(findNewUserId);
+            req.session.user_id = thisUserId[0].user_id;
+            req.session.user_name = username;
+            req.session.save(function (err) {
+                if (err) return err;
+                res.redirect("/user_homepage");
 
+            })
+        }
+    };
 });
-
-
-
-
-// connection.query(query, [username, password, email], function (err, result, fields) {
-//     if (err) {
-//         let duplicateErrors = "Username or email address already exists."
-//         res.render("registration",{
-//             showMsg: duplicateErrors,  
-//         })
-//     } else{ // 
-//         req.session.user_id = thisUserId[0].user_id;
-//         req.session.user_name = user_name;
-//         req.session.save(function (err) {
-//             if (err) return err;
-//             res.redirect("/user_homepage");
-//         res.redirect("/user_homepage");
-
-
-
-
-
-
-
-
+  
 //--------------------------------------------------------post your work-----------------------------------------//
 router.get("/user_homepage", (req, res) => {
     if (userLoggedIn(req) == true) { // code run if user is logged in - session is active
@@ -198,7 +168,8 @@ router.get("/user_homepage", (req, res) => {
             `SELECT P.*, U.user_name
              FROM post as P, user_credential as U
              WHERE P.user_id = U.user_id
-             AND P.user_id =?`;
+             AND P.user_id =?
+             ORDER BY post_date DESC`;
         // const commentsQuery = "SELECT"
         connection.query(query, [user_id], function (err, result, fields) {
             if (err) throw err; //if throw err here the website will stop running
@@ -211,6 +182,7 @@ router.get("/user_homepage", (req, res) => {
             // console.log(result);
             res.render("show_post", {
                 data: {
+                    user_name: req.session.user_name,
                     result: result,
                     isUserHomepage: true,
                     isLoggedIn: userLoggedIn(req),
@@ -389,7 +361,8 @@ router.get("/image_showcase", async (req, res) => {
     //get all the user data of this user from db
     const allPostsQuery = `SELECT P.*, U.user_name
         FROM post as P, user_credential as U
-        WHERE P.user_id = U.user_id`;
+        WHERE P.user_id = U.user_id
+        ORDER BY post_date DESC`;
     // otherfields contains irrelevant info from the query execution.
     let [allPosts, otherFields] = await connection_promise.execute(allPostsQuery);
     for (let thisPost of allPosts) { // for each post
@@ -409,7 +382,6 @@ router.get("/image_showcase", async (req, res) => {
             let [thisCommentLikes, commentLikeOtherFields] =
                 await connection_promise.execute(likeToCommentsQuery);
             thisComment.allLikes = thisCommentLikes[0].count;
-            console.log(thisComment.allLikes);
         }
 
         //append the comments to the result passed on to ejs
@@ -446,7 +418,7 @@ router.post("/addComment", (req, res) => {
     const commentUser = req.session.user_id;
     const commentText = req.body.commentText;
     const insertCommentQuery = `INSERT INTO user_comment(user_id, comment_text, post_id, comment_date)
-        VALUES (?,?,?,  CURDATE())`;
+        VALUES (?,?,?, CURDATE())`;
     connection.query(insertCommentQuery, [commentUser, commentText, postId], function (err, result, fields) {
         if (err) throw err;
         res.redirect("/image_showcase");
