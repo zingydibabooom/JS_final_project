@@ -58,6 +58,14 @@
     <div class="row d-flex align-items-center justify-content-center">
         <div id="registration_form" class="col-4">
           <form action="/addUserCredentials" method="post">
+            <% if(locals.currentErrors){ %>
+                <% currentErrors.forEach(function(error){ %>
+                    <div class="alert alert-danger" role="alert"><%=error%></div>
+                <%});%>
+            <%};%>
+            <% if(locals.showMsg){ %>
+                <div class="alert alert-danger" role="alert"><%=showMsg%></div>
+            <%};%>
         <h1> Sign up</h1>
         <div class="flex-row">
             <div class="col-md-auto mt-5">
@@ -68,7 +76,7 @@
         <div class="flex-row">
             <div class="col-md-auto mt-5">
                 <label for="password" value="password">Password:</label>
-                <input type="text" class="form-control" name="password" id="password" placeholder="12345">
+                <input type="password" class="form-control" name="password" id="password" placeholder="12345">
             </div>
         </div>
         <div class="flex-row">

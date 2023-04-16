@@ -6,7 +6,6 @@ const router = express.Router();
 const bodyParser = require("body-parser");
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
 const { validationRule, validationResult } = require("./validationrules");
-const passport = require("passport");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -22,7 +21,6 @@ const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
 const sessionStore = new MySQLStore(DB_CONFIG);
 
-router.use(flash());
 router.use(session({
     key: 'session_cookie_name',
     secret: 'session_cookie_secret',
@@ -30,9 +28,6 @@ router.use(session({
     resave: false,
     saveUninitialized: false
 }));
-router.use(passport.initialize());
-router.use(passport.session());
-
 
 // the prefix to an image's path (before image name)
 const image_directory_str = "uploads/resized/";
@@ -45,12 +40,9 @@ sessionStore.onReady().then(() => {
     // Something went wrong.
     console.error(error);
 });
-
-
 // lets router use this for all paths - parse / understand user http requests.
 //can remove erlencodedParser from individual paths now
 router.use(urlencodedParser);
-
 
 //-------------------------------------------- homepage --------------------------------------------//
 
@@ -76,7 +68,7 @@ router.post("/authentic_logIn", async (req, res) => {
     req.session.regenerate(function (err) {
         if (err) console.log(err);
         //authentication - check user credentials against database
-
+        let connection = mysql.createConnection(DB_CONFIG);
         connection.connect(function (err) {
             if (err) throw err;
             else console.log("successful connection")
@@ -88,30 +80,30 @@ router.post("/authentic_logIn", async (req, res) => {
         connection.query(query, [targetUserName, targetPassword], function (err, result, fields) {
             if (err) throw err;
             if (result.length === 0) { // not logged in
-
-                //TODO: prompt wrong username or password
-
+                let wrongInfo = "Incorrect username or password";
+                res.render("log_in", {
+                    wrongInfo: wrongInfo,
+                });
             } else { //logged in
                 // unpack sql result and get uder id(primary key), then assign to session.user_id
                 // then use that to insnert into post table
                 req.session.user_id = result[0].user_id;
                 req.session.user_name = result[0].user_name;
                 req.session.save(function (err) {
-                    if (err) return next(err);
+                    if (err) return err;
                     res.redirect("/user_homepage");
                 })
             }
         })
     })
-    connection.end();
 });
 
 //-----------------------------------------------------for Log in & Register ----------------------------------//
 router.get("/registration", (req, res) => {
     return res.render("registration");
 })
-router.post("/addUserCredentials", validationRule, (req, res) => {
 
+router.post("/addUserCredentials", validationRule, async (req, res) => {
     let username = req.body.username;
     let password = req.body.password;
     let email = req.body.email;
@@ -119,43 +111,94 @@ router.post("/addUserCredentials", validationRule, (req, res) => {
     //Error messages
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        let markup = ``;
         const errorArray = errors.array();
+        let currentErrors = [];
         for (let i = 0; i < errorArray.length; i++) {
-            console.log(errorArray[i]);
-            const currentError = errorArray[i].param;
+            const currentError = errorArray[i];
             console.log(currentError);
-            if (currentError == 'email') {
-                markup = `<div class="alert alert-danger" role="alert"> Please enter a valid email. </div>`
-                form.insertAdjacentHTML('beforebegin', markup);
-                // } else if (currentError == 'username') {
-                //     alert("Please enter username.")
-                // } else if (currentError == 'password') {
-                //     alert(
-                //         "The password must be: min 8 characters, one lower case,\
-                // one uppercase, one special character.")
-                // }
+            //show the error message
+            let errorMsg = "invalid " + currentError.param + ":" + currentError.value;
+            let errorMsgPsw = "invalid " + currentError.param + ": the password must contains minimum 8 charaters, one lower case, one uppercase, one special character";
+            if (currentError.param == "password") {
+                currentErrors.push(errorMsgPsw);
+            } else {
+                currentErrors.push(errorMsg);
             }
-            //if there is no error, open query:
-            const query = `INSERT INTO user_credential(
-             user_name, user_password, user_email) VALUES (?, ?, ?);`
-            let connection = mysql.createConnection(DB_CONFIG);
-            connection.query(query, [username, password, email], function (err, result, fields) {
-                if (err) throw err; //if throw err here the website will stop running 
+            res.render("registration", {
+                currentErrors: currentErrors,
+            });
+        }
+    } else {
+        try {
+            let connection = await mysqlPromise.createConnection(DB_CONFIG);
+            await connection.execute("INSERT `user_credential`(\
+                `user_name`, `user_password`, `user_email`) VALUES (?,?)", [username, password, email]);
+        } catch (e) {
+            let duplicateErrors = "Username or email address already exists.";
+            res.render("registration", {
+                showMsg: duplicateErrors,
             });
         };
-        //      connection.end();
-    };
+    }
+
 });
+// let connection_promise = await mysqlPromise.createConnection(DB_CONFIG);
+// const insertUserquery = `INSERT INTO user_credential(
+//      user_name, user_password, user_email) VALUES ("${username}", "${password}", "${email}");`
+// let[userInfo, newUserotherFields, error] = await connection_promise.execute(insertUserquery);
+// if (error) {
+//     let duplicateErrors = "Username or email address already exists."
+//     res.render("registration",{
+//         showMsg: duplicateErrors,  
+//     });
+// }         
+const findNewUserId = `SELECT user_id, user_name 
+            FROM user_credential WHERE
+             user_name = "${username}";`
+let [thisUserId, userIdOtherFields] = await connection_promise.execute(findNewUserId);
+req.session.user_id = thisUserId[0].user_id;
+req.session.user_name = username;
+req.session.save(function (err) {
+    if (err) return err;
+    res.redirect("/user_homepage");
+
+});
+
+
+
+
+// connection.query(query, [username, password, email], function (err, result, fields) {
+//     if (err) {
+//         let duplicateErrors = "Username or email address already exists."
+//         res.render("registration",{
+//             showMsg: duplicateErrors,  
+//         })
+//     } else{ // 
+//         req.session.user_id = thisUserId[0].user_id;
+//         req.session.user_name = user_name;
+//         req.session.save(function (err) {
+//             if (err) return err;
+//             res.redirect("/user_homepage");
+//         res.redirect("/user_homepage");
+
+
+
+
+
+
+
 
 //--------------------------------------------------------post your work-----------------------------------------//
 router.get("/user_homepage", (req, res) => {
     if (userLoggedIn(req) == true) { // code run if user is logged in - session is active
         var user_id = req.session.user_id;
-        var user_name = req.session.user_name;
         let connection = mysql.createConnection(DB_CONFIG);
         //get all the user data of this user from db
-        const query = `SELECT * from post WHERE user_id = ?`;
+        const query =
+            `SELECT P.*, U.user_name
+             FROM post as P, user_credential as U
+             WHERE P.user_id = U.user_id
+             AND P.user_id =?`;
         // const commentsQuery = "SELECT"
         connection.query(query, [user_id], function (err, result, fields) {
             if (err) throw err; //if throw err here the website will stop running
@@ -168,7 +211,6 @@ router.get("/user_homepage", (req, res) => {
             // console.log(result);
             res.render("show_post", {
                 data: {
-                    user_name: user_name,
                     result: result,
                     isUserHomepage: true,
                     isLoggedIn: userLoggedIn(req),
@@ -178,7 +220,6 @@ router.get("/user_homepage", (req, res) => {
     } else { // if not logged in
         res.render("log_in", { messages: { error: null } });
     }
-    connection.end();
 });
 
 //---------------------log out-------//
@@ -267,7 +308,6 @@ router.post("/upload", async (req, res) => {
         });
     }
 
-    connection.end();
 });
 
 
@@ -289,9 +329,8 @@ router.post("/post_complete", (req, res) => {
         WHERE image_name = ?`;
     connection.query(query, [post_title, caption, image_name], function (err, result, fields) {
         if (err) throw err;
+        res.redirect("/user_homepage");
     });
-
-    // connection.end();
 });
 
 async function receiveAndResizeImage(image, imageUploaded, editedFile, res, imageNewName) {
@@ -327,6 +366,7 @@ async function receiveAndResizeImage(image, imageUploaded, editedFile, res, imag
 }
 
 function insertImageIntoDatabase(imageNewName, user_id) {
+    let connection = mysql.createConnection(DB_CONFIG);
     connection.connect(function (err) {
         if (err)
             throw err;
@@ -384,14 +424,11 @@ router.get("/image_showcase", async (req, res) => {
         let [thisPostsLikes, otherField] = await connection_promise.execute(likeQuery);
         thisPost.likes = thisPostsLikes;
         thisPost.likesNum = thisPost.likes.length;
-        // console.log(thisPost);
 
         //show all images
         thisPost.image_path = image_directory_str + thisPost.image_name;
 
     }
-
-
     res.render("show_post", {
         data: {
             result: allPosts,
